@@ -8,7 +8,7 @@ namespace Synth
     {
         public string Name { get; set; }
         private List<Song> Songs { get; set; }
-        // add albums later
+        // TODO: add albums property once Album class
 
         public Artist(string name, List<Song> songs)
         {
@@ -23,7 +23,7 @@ namespace Synth
 
         public void AddAlbum()
         {
-            // add album class later
+            // TODO: add album logic later
         }
 
         public override string ToString()
