@@ -10,10 +10,9 @@ namespace Synth
         private List<Song> Songs { get; set; }
         // TODO: add albums property once Album class
 
-        public Artist(string name, List<Song> songs)
+        public Artist(string name)
         {
             this.Name = name;
-            this.Songs = songs;
         }
 
         public void AddSong(Song song)
