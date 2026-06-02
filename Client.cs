@@ -9,6 +9,7 @@ namespace Synth
     internal class Client
     {
         private List<Song> AllSongs { get; set; }
+        private const int SongsPerPage = 6;
 
         public Client()
         {
@@ -46,16 +47,48 @@ namespace Synth
             return songs;
         }
 
-        public void ShowAllSongs()
+        public void ShowAllSongs(int pageNumber)
         {
+            // calculate total pages
+            int totalPages = (int)Math.Ceiling((double)AllSongs.Count / SongsPerPage);
+
+            // validate
+            if (pageNumber < 1 || pageNumber > totalPages)
+            {
+                Console.WriteLine($"\n[Error] Invalid page. Please choose between page 1 and {totalPages}.");
+                return;
+            }
+
+            
             Console.WriteLine("\nTitle - Artist(s) - Genre");
             Console.WriteLine("-----------------------------------\n");
-            int i = 1;
-            foreach (var song in AllSongs)
-            {
-                Console.WriteLine($"[{i}] "+song);
-                i++;
+
+            // calculate where to start reading from the list
+            int startIndex = (pageNumber - 1) * SongsPerPage;
+
+            int currentLoopIndex = 0; // tracks every song we pass by
+            int songsPrinted = 0;     // tracks how many displayed
+
+
+            foreach(var song in AllSongs)
+    {
+                // only print if we have skipped the songs from previous pages
+                if (currentLoopIndex >= startIndex)
+                {
+                    // print the song ( 1-based indexing for the UI)
+                    Console.WriteLine($"[{currentLoopIndex + 1}] " + song);
+                    songsPrinted++;
+
+                    // stop when 6 songs are printed
+                    if (songsPrinted == SongsPerPage)
+                    {
+                        break;
+                    }
+                }
+
+                currentLoopIndex++;
             }
+            Console.WriteLine($"\n----------------------- Page: {pageNumber} / {totalPages}");
         }
 
     }
