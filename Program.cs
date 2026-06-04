@@ -1,28 +1,57 @@
-﻿// Program.csusing Synth;
-
-using Synth;
+﻿using Synth;
 
 internal class Program
 {
-
     private static void Main(string[] args)
     {
-        ShowWelcomeScreen();
+        while (true)
+        {
+            ShowWelcomeScreen();
+            string userInput = Console.ReadLine() ?? "0";
 
-        Client client = new Client();
-        // TDOD add switch case for menu options
+            switch (userInput)
+            {
+                case "1": // Songs
+                    HandleSongsMenu();
+                    break;
+                case "2": // Albums
+                    Console.WriteLine("Albums feature coming soon...");
+                    Console.ReadLine();
+                    break;
+                case "3": // Artists
+                    Console.WriteLine("Artists feature coming soon...");
+                    Console.ReadLine();
+                    break;
+                case "4": // My playlists
+                    Console.WriteLine("My playlists feature coming soon...");
+                    Console.ReadLine();
+                    break;
+                case "5": // Friends
+                    Console.WriteLine("Friends feature coming soon...");
+                    Console.ReadLine();
+                    break;
+                case "0": // Exit
+                    Console.WriteLine("Goodbye!");
+                    return;
+                default:
+                    Console.WriteLine("Invalid option. Please try again.");
+                    Console.ReadLine();
+                    break;
+            }
+        }
+    }
 
-
-
+    private static void HandleSongsMenu()
+    {
         int currentPage = 1;
+        Client client = new Client();
         client.ShowAllSongs(currentPage);
 
         while (true)
         {
             Console.Write("\nEnter command: ");
-            // array of words("page 2" becomes ["page", "2"])
             string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
-            string command = parts[0]; // first word ("page" or "exit")
+            string command = parts[0];
 
             if (command == "exit")
             {
@@ -31,16 +60,20 @@ internal class Program
 
             if (command == "page" && parts.Length > 1)
             {
-                // convert the second word to a number
-                currentPage = int.Parse(parts[1]);
-                client.ShowAllSongs(currentPage);
+                if (int.TryParse(parts[1], out currentPage))
+                {
+                    client.ShowAllSongs(currentPage);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid page number.");
+                }
             }
             else
             {
                 Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
             }
         }
-
     }
 
     private static void ShowWelcomeScreen()
@@ -49,7 +82,7 @@ internal class Program
         Console.WriteLine("╭──────────────────────────────────────────────────────────────╮");
         Console.WriteLine("│                  Synth CLI player - Console                  │");
         Console.WriteLine("├──────────────────────────────────────────────────────────────┤");
-        Console.WriteLine("│  1  Synth Player                                             │");
+        Console.WriteLine("│  Synth Player                                                │");
         Console.WriteLine("│──────────────────────────────────────────────────────────────│");
         Console.WriteLine("│  Logged in: Main users                                       │");
         Console.WriteLine("│                                                              │");
@@ -65,9 +98,4 @@ internal class Program
         Console.WriteLine("╰──────────────────────────────────────────────────────────────╯");
         Console.Write("-> ");
     }
-
-
-    // TODO:// Create Client class with LoadSongs method that reads from a file and creates Song and Artist objects// Create ShowAllSongs method that displays all songs in the library as a list// Create a methode for duration of songs in minutes and seconds    }
-
-
 }
