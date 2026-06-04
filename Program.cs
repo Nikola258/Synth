@@ -98,7 +98,7 @@ internal class Program
         while (true)
         {
             Console.WriteLine("\n[1] Play");
-            Console.WriteLine("[2] Add to playlist (not implemented)");
+            Console.WriteLine("[2] Add to playlist (not working)");
             Console.WriteLine("[0] Back");
 
             Console.Write("-> ");
@@ -108,7 +108,8 @@ internal class Program
             {
                 case "1":
                     client.ShowNowPlaying();
-                    client.Play();             
+                    client.Play();
+                    // add explenation of how to go back
                     Console.ReadLine();
                     break;
 
@@ -121,7 +122,7 @@ internal class Program
                     return; // back
 
                 default:
-                    Console.WriteLine("Invalid option.");
+                    Console.WriteLine("Invalid option");
                     break;
             }
         }

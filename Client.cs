@@ -4,6 +4,7 @@ using System.Diagnostics.Metrics;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using WMPLib;
 
 namespace Synth
 {
@@ -14,11 +15,13 @@ namespace Synth
         private List<Song> AllSongs { get; set; }
         private const int SongsPerPage = 6;
         public IPlayable CurrentlyPlaying { get; private set; }
+        private readonly WindowsMediaPlayer _player;
 
         public Client()
         {
             AllSongs = LoadSongs();
             CurrentlyPlaying = null;
+            _player = new WindowsMediaPlayer();
         }
 
         public void SelectSong(int songIndex)
@@ -31,7 +34,7 @@ namespace Synth
                 Console.WriteLine("[Error] Invalid song selection.");
                 return;
             }
-            CurrentlyPlaying?.Stop();
+            _player.controls.stop();
 
             CurrentlyPlaying = AllSongs[index];
             Console.WriteLine($"\nSelected: {AllSongs[index]}");
@@ -44,7 +47,17 @@ namespace Synth
                 Console.WriteLine("\n[Error] No song selected. Please select a song first.");
                 return;
             }
-            CurrentlyPlaying.Play();
+
+            if (CurrentlyPlaying is Song song)
+            {
+                _player.URL = song.FilePath;
+                _player.controls.play();
+                Console.WriteLine($"Playing: {song.Title} by {string.Join(", ", song.Artists)}");
+            }
+            else
+            {
+                Console.WriteLine("[Error] Cannot play selection - missing file path.");
+            }
         }
 
         // add progress bar or something nice visually to show the progress

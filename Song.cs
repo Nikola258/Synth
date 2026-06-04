@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using WMPLib;
 
 namespace Synth
 {
@@ -15,8 +14,6 @@ namespace Synth
 
         // for iplayable
         public int Length => Duration;
-        // for each song to manage
-        private WindowsMediaPlayer _player;
 
 
         public Song(string title, List<Artist> artists, int duration, Genres genre, string filePath = "")
@@ -26,20 +23,9 @@ namespace Synth
             this.Duration = duration;
             this.SongGenre = genre;
             this.FilePath = filePath;
-            _player = new WindowsMediaPlayer();
         }
 
-        public void Play()
-        {
-            if(string.IsNullOrEmpty(this.FilePath))
-            {
-                Console.WriteLine($"[Error] Cannot play '{Title}' - file path is missing.");
-                return;
-            }
-            _player.URL = this.FilePath;
-            _player.controls.play();
-            Console.WriteLine($"Playing: {Title} by {string.Join(", ", Artists)}");
-        }
+        public void Play() { }
         public void Pause() { }
         public void Stop() { }
         public void Next() { }
