@@ -108,8 +108,8 @@ internal class Program
             {
                 case "1":
                     client.ShowNowPlaying();
-                    client.Play();             // actual playback
-                    Console.ReadLine();        // pause screen
+                    client.Play();             
+                    Console.ReadLine();
                     break;
 
                 case "2":
@@ -118,7 +118,7 @@ internal class Program
                     break;
 
                 case "0":
-                    return; // go back to songs list
+                    return; // back
 
                 default:
                     Console.WriteLine("Invalid option.");

@@ -54,7 +54,6 @@ namespace Synth
             {
                 Console.Clear();
                 Console.WriteLine("Now Playing\n");
-                Console.WriteLine($"Title : {song.Title}");
                 Console.WriteLine($"Artist: {string.Join(", ", song.Artists)}");
                 Console.WriteLine($"Genre : {song.SongGenre}");
             }
@@ -84,7 +83,7 @@ namespace Synth
                 new Song ("Ricky Sand's Country Ballad", new List<Artist> { rickySand }, 230, Genres.Country, @"C:\music\BluesGuitar.mp3"),
                 new Song ("Techno Cock's Blast", new List<Artist> { technoCock }, 230, Genres.Country, @"C:\music\DarkTechno.mp3"),
                 new Song ("WEEDnin out haaard", new List<Artist> { afroWeed }, 260, Genres.Jazz, @"C:\music\NormalTechno.mp3"),
-                new Song ("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, 300, Genres.Classical, @"C:\music\WhiskyBlues.mp3"),
+                new Song ("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, 300, Genres.Jazz, @"C:\music\WhiskyBlues.mp3"),
             };
 
             return songs;
