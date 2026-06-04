@@ -4,6 +4,10 @@ internal class Program
 {
     private static void Main(string[] args)
     {
+
+        // TODO:
+        // - add more songs to the list
+        // - add Console.Clear(); for cleaner look
         while (true)
         {
             ShowWelcomeScreen();
@@ -69,9 +73,56 @@ internal class Program
                     Console.WriteLine("Invalid page number.");
                 }
             }
+            if (command == "select" && parts.Length > 1)
+            {
+                if (int.TryParse(parts[1], out int songIndex))
+                {
+                    client.SelectSong(songIndex);
+                    HandleSongOptionsMenu(client);
+                    client.ShowAllSongs(currentPage);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid song number.");
+                }
+            }   
             else
             {
                 Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
+            }
+        }
+    }
+
+    private static void HandleSongOptionsMenu(Client client)
+    {
+        while (true)
+        {
+            Console.WriteLine("\n[1] Play");
+            Console.WriteLine("[2] Add to playlist (not implemented)");
+            Console.WriteLine("[0] Back");
+
+            Console.Write("-> ");
+            string input = Console.ReadLine() ?? "0";
+
+            switch (input)
+            {
+                case "1":
+                    client.ShowNowPlaying();
+                    client.Play();             // actual playback
+                    Console.ReadLine();        // pause screen
+                    break;
+
+                case "2":
+                    Console.WriteLine("Feature coming soon...");
+                    Console.ReadLine();
+                    break;
+
+                case "0":
+                    return; // go back to songs list
+
+                default:
+                    Console.WriteLine("Invalid option.");
+                    break;
             }
         }
     }
