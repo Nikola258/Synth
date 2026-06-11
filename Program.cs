@@ -47,7 +47,7 @@ internal class Program
         }
     }
 
-    
+
     private static void HandleSongsMenu()
     {
         int currentPage = 1;
@@ -88,7 +88,7 @@ internal class Program
                 {
                     Console.WriteLine("Invalid song number.");
                 }
-            }   
+            }
             else
             {
                 Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
@@ -112,7 +112,7 @@ internal class Program
                 case "1":
                     client.ShowNowPlaying();
                     client.Play();
-                    // add explenation of how to go back
+                    HandleNowPlayingMenu(client);
                     Console.ReadLine();
                     break;
 
@@ -122,7 +122,46 @@ internal class Program
                     break;
 
                 case "0":
-                    return; // back
+                    return;
+
+                default:
+                    Console.WriteLine("Invalid option");
+                    break;
+            }
+        }
+    }
+
+    private static void HandleNowPlayingMenu(Client client)
+    {
+        while (true)
+        {
+            Console.WriteLine("\n[P] Pause");
+            Console.WriteLine("[R] Resume");
+            Console.WriteLine("[N] Next");
+            Console.WriteLine("[0] Back");
+
+            Console.Write("-> ");
+            string input = Console.ReadLine() ?? "0";
+
+            switch (input.ToLower())
+            {
+                case "p":
+                    client.Pause();
+                    Console.ReadLine();
+                    break;
+
+                case "r":
+                    client.Resume();
+                    Console.ReadLine();
+                    break;
+
+                case "n":
+                    client.NextSong();
+                    Console.ReadLine();
+                    break;
+
+                case "0":
+                    return;
 
                 default:
                     Console.WriteLine("Invalid option");
