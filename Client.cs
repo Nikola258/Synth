@@ -11,7 +11,7 @@ namespace Synth
 
     internal class Client
     {
-        
+
         private List<Song> AllSongs { get; set; }
         private const int SongsPerPage = 6;
         public IPlayable CurrentlyPlaying { get; private set; }
@@ -60,6 +60,35 @@ namespace Synth
             }
         }
 
+        public void Pause()
+        {
+            _player.controls.pause();
+            Console.WriteLine("Song paused.");
+        }
+
+        public void Resume()
+        {
+            _player.controls.play();
+            Console.WriteLine("Song resumed.");
+        }
+
+        public void NextSong()
+        {
+            if (CurrentlyPlaying is Song song)
+            {
+                int currentIndex = AllSongs.IndexOf(song);
+                if (currentIndex < AllSongs.Count - 1)
+                {
+                    SelectSong(currentIndex + 2); // +2 because SelectSong expects 1-based index
+                    Play();
+                }
+                else
+                {
+                    Console.WriteLine("No next song available.");
+                }
+            }
+        }
+
         // TODO: add progress bar or something nice visually to show the progress
         public void ShowNowPlaying()
         {
@@ -83,7 +112,7 @@ namespace Synth
             var technoBlast = new Artist("Techno Blast");
             var afroWeed = new Artist("Afro Weed");
             var shoppensDad = new Artist("Shoppen's Dad");
-            
+
 
 
             // song list
@@ -114,7 +143,7 @@ namespace Synth
                 return;
             }
 
-            
+
             Console.WriteLine("\nTitle - Artist(s) - Genre");
             Console.WriteLine("-----------------------------------\n");
 
@@ -125,8 +154,8 @@ namespace Synth
             int songsPrinted = 0;     // tracks how many displayed
 
 
-            foreach(var song in AllSongs)
-    {
+            foreach (var song in AllSongs)
+            {
                 // only print if we have skipped the songs from previous pages
                 if (currentLoopIndex >= startIndex)
                 {
