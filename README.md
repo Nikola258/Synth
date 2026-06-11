@@ -32,7 +32,7 @@ Instead of handling audio decoding it, you can:
 Main class that controls everything.
 
 ```csharp
-var player = new WindowsMediaPlayer();
+var _player = new WindowsMediaPlayer();
 ```
 
 * Loads audio files
@@ -46,10 +46,16 @@ var player = new WindowsMediaPlayer();
 Controls playback actions.
 
 ```csharp
-player.controls.play();
-player.controls.pause();
-player.controls.stop();
+_player.controls.play();
+_player.controls.pause();
+_player.controls.stop();
+_player.currentMedia.duration
 ```
+
+Other useful features:
+
+currentPosition → get/set current time in seconds
+Seek through a song
 
 ---
 
@@ -58,7 +64,7 @@ player.controls.stop();
 Represents a loaded media file.
 
 ```csharp
-IWMPMedia media = player.newMedia("song.mp3");
+IWMPMedia media = _player.newMedia("song.mp3");
 double duration = media.duration;
 ```
 
