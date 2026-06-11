@@ -10,7 +10,7 @@ namespace Synth
         void Pause();
         void Next();
         void Stop();
-        int Length { get; }
+        double Length { get; }
         string Title { get; }
     }
 }
