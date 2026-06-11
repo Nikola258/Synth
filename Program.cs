@@ -8,6 +8,8 @@ internal class Program
         // TODO:
         // - add more songs to the list
         // - add Console.Clear(); for cleaner look
+
+        // TODO: add explanation of how to use the menu in HandleSongsMenu()
         while (true)
         {
             ShowWelcomeScreen();
@@ -45,6 +47,7 @@ internal class Program
         }
     }
 
+    
     private static void HandleSongsMenu()
     {
         int currentPage = 1;

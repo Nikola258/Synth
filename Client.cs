@@ -60,7 +60,7 @@ namespace Synth
             }
         }
 
-        // add progress bar or something nice visually to show the progress
+        // TODO: add progress bar or something nice visually to show the progress
         public void ShowNowPlaying()
         {
             if (CurrentlyPlaying is Song song)
@@ -80,7 +80,7 @@ namespace Synth
             var girlyFreak = new Artist("Girly Freak");
             var deadChild = new Artist("Dead Child");
             var rickySand = new Artist("Ricky Sand");
-            var technoCock = new Artist("Techno Cock");
+            var technoBlast = new Artist("Techno Blast");
             var afroWeed = new Artist("Afro Weed");
             var shoppensDad = new Artist("Shoppen's Dad");
             
@@ -94,7 +94,7 @@ namespace Synth
                 new Song ("Girly Freak Pop", new List<Artist> { girlyFreak }, 240, Genres.Pop, @"C:\music\Nightcore.mp3"),
                 new Song ("Dead Child's Rock", new List<Artist> { deadChild }, 200, Genres.Rock, @"C:\music\RockMix.mp3"),
                 new Song ("Ricky Sand's Country Ballad", new List<Artist> { rickySand }, 230, Genres.Country, @"C:\music\BluesGuitar.mp3"),
-                new Song ("Techno Cock's Blast", new List<Artist> { technoCock }, 230, Genres.Country, @"C:\music\DarkTechno.mp3"),
+                new Song ("Techno Blast", new List<Artist> { technoBlast }, 230, Genres.Country, @"C:\music\DarkTechno.mp3"),
                 new Song ("WEEDnin out haaard", new List<Artist> { afroWeed }, 260, Genres.Jazz, @"C:\music\NormalTechno.mp3"),
                 new Song ("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, 300, Genres.Jazz, @"C:\music\WhiskyBlues.mp3"),
             };
