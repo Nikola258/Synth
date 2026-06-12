@@ -19,9 +19,9 @@ namespace Synth
 
         public Client()
         {
+            _player = new WindowsMediaPlayer();
             AllSongs = LoadSongs();
             CurrentlyPlaying = null;
-            _player = new WindowsMediaPlayer();
         }
 
         public void SelectSong(int songIndex)
@@ -52,7 +52,7 @@ namespace Synth
             {
                 _player.URL = song.FilePath;
                 _player.controls.play();
-                Console.WriteLine($"Playing: {song.Title} by {string.Join(", ", song.Artists)}");
+
             }
             else
             {
@@ -92,21 +92,22 @@ namespace Synth
             SelectSong(index + 2);
             Play();
         }
-
-        // TODO: add progress bar or something nice visually to show the progress
-        public void ShowNowPlaying()
-        {
-            if (CurrentlyPlaying is Song song)
-            {
-                Console.Clear();
-                Console.WriteLine("Now Playing\n");
-                Console.WriteLine($"Artist: {string.Join(", ", song.Artists)}");
-                Console.WriteLine($"Genre : {song.SongGenre}");
-            }
-        }
+        
 
         private List<Song> LoadSongs()
         {
+            
+            double GetDuration(string filePath)
+            {
+                var media = _player.newMedia(filePath);
+                return media.duration;
+            }
+
+            Song CreateSong(string title, List<Artist> artists, Genres genre, string filePath)
+            {
+                return new Song(title, artists, GetDuration(filePath), genre, filePath);
+            }
+
             // artists
             var hippoRap = new Artist("Hippo Rap");
             var madMax = new Artist("Mad Max");
@@ -122,14 +123,14 @@ namespace Synth
             // song list
             var songs = new List<Song>
             {
-                new Song("Hippo Rap Anthem", new List<Artist> { hippoRap },210, Genres.Rap, @"C:\music\NeedForSpeedMostWanted.mp3"),
-                new Song ("Mad Max Lullaby", new List<Artist> { madMax }, 180, Genres.Soul, @"C:\music\TechoBoom.mp3"),
-                new Song ("Girly Freak Pop", new List<Artist> { girlyFreak }, 240, Genres.Pop, @"C:\music\Nightcore.mp3"),
-                new Song ("Dead Child's Rock", new List<Artist> { deadChild }, 200, Genres.Rock, @"C:\music\RockMix.mp3"),
-                new Song ("Ricky Sand's Country Ballad", new List<Artist> { rickySand }, 230, Genres.Country, @"C:\music\BluesGuitar.mp3"),
-                new Song ("Techno Blast", new List<Artist> { technoBlast }, 230, Genres.Country, @"C:\music\DarkTechno.mp3"),
-                new Song ("WEEDnin out haaard", new List<Artist> { afroWeed }, 260, Genres.Jazz, @"C:\music\NormalTechno.mp3"),
-                new Song ("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, 300, Genres.Jazz, @"C:\music\WhiskyBlues.mp3"),
+                CreateSong("Hippo Rap Anthem", new List<Artist> { hippoRap }, Genres.Rap, @"C:\music\NeedForSpeedMostWanted.mp3"),
+                CreateSong("Mad Max Lullaby", new List<Artist> { madMax }, Genres.Soul, @"C:\music\TechnoBoom.mp3"),
+                CreateSong("Girly Freak Pop", new List<Artist> { girlyFreak }, Genres.Pop, @"C:\music\Nightcore.mp3"),
+                CreateSong("Dead Child's Rock", new List<Artist> { deadChild }, Genres.Rock, @"C:\music\RockMix.mp3"),
+                CreateSong("Ricky Sand's Country Ballad", new List<Artist> { rickySand }, Genres.Country, @"C:\music\BluesGuitar.mp3"),
+                CreateSong("Techno Blast", new List<Artist> { technoBlast }, Genres.Country, @"C:\music\DarkTechno.mp3"),
+                CreateSong("WEEDnin out haaard", new List<Artist> { afroWeed }, Genres.Jazz, @"C:\music\NormalTechno.mp3"),
+                CreateSong("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, Genres.Jazz, @"C:\music\WhiskyBlues.mp3"),
             };
 
             return songs;
@@ -164,7 +165,7 @@ namespace Synth
                 if (currentLoopIndex >= startIndex)
                 {
                     // print the song ( 1-based indexing for the UI)
-                    Console.WriteLine($"[{currentLoopIndex + 1}] " + song);
+                    Console.WriteLine($"[{currentLoopIndex + 1}] " + song + $" ({TimeSpan.FromSeconds(song.Duration):hh\\:mm\\:ss}) " );
                     songsPrinted++;
 
                     // stop when 6 songs are printed
@@ -179,5 +180,19 @@ namespace Synth
             Console.WriteLine($"\n----------------------- Page: {pageNumber} / {totalPages}");
         }
 
+        public string GetCurrentSongTime()
+        {
+            if (CurrentlyPlaying is not Song song) return "";
+
+            // get current track time from the player
+            double current = _player.controls.currentPosition;
+
+            // convert raw seconds into clean h/m/s format
+            string currentStr = TimeSpan.FromSeconds(current).ToString(@"hh\:mm\:ss");
+            string totalStr = TimeSpan.FromSeconds(song.Duration).ToString(@"hh\:mm\:ss");
+
+            
+            return $"{currentStr} / {totalStr}";
+        }
     }
 }

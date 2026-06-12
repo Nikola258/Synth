@@ -50,48 +50,56 @@ internal class Program
 
     private static void HandleSongsMenu()
     {
+        Console.Clear();
         int currentPage = 1;
         Client client = new Client();
-        client.ShowAllSongs(currentPage);
 
         while (true)
         {
+            client.ShowAllSongs(currentPage);
+            Console.WriteLine("\n- [page {number}] to switch page");
+            Console.WriteLine("- [select {number}] to select a song");
+            Console.WriteLine("- [back] to go back");
             Console.Write("\nEnter command: ");
             string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
             string command = parts[0];
 
-            if (command == "exit")
+            if (command == "back")
             {
                 break;
             }
 
-            if (command == "page" && parts.Length > 1)
+            else if (command == "page" && parts.Length > 1)
             {
                 if (int.TryParse(parts[1], out currentPage))
                 {
-                    client.ShowAllSongs(currentPage);
+                    Console.Clear();
                 }
                 else
                 {
                     Console.WriteLine("Invalid page number.");
+                    Console.ReadLine(); // Pause to let user read error
+                    Console.Clear();
                 }
             }
-            if (command == "select" && parts.Length > 1)
+            else if (command == "select" && parts.Length > 1)
             {
                 if (int.TryParse(parts[1], out int songIndex))
                 {
                     client.SelectSong(songIndex);
                     HandleSongOptionsMenu(client);
-                    client.ShowAllSongs(currentPage);
+                    Console.Clear();
                 }
                 else
                 {
                     Console.WriteLine("Invalid song number.");
+                    Console.Clear();
                 }
             }
             else
             {
                 Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
+                Console.Clear();
             }
         }
     }
@@ -110,15 +118,15 @@ internal class Program
             switch (input)
             {
                 case "1":
-                    client.ShowNowPlaying();
+                    
                     client.Play();
                     HandleNowPlayingMenu(client);
-                    Console.ReadLine();
+                    //Console.ReadLine();
                     break;
 
                 case "2":
                     Console.WriteLine("Feature coming soon...");
-                    Console.ReadLine();
+                    //Console.ReadLine();
                     break;
 
                 case "0":
@@ -133,31 +141,70 @@ internal class Program
 
     private static void HandleNowPlayingMenu(Client client)
     {
+        // return if no song is currently playing and to use song variable for easier access to song details
+        if (client.CurrentlyPlaying is not Song song) return;
+
+        bool isPaused = false;
+
         while (true)
         {
+            Console.Clear();
+
+            string statusTag = isPaused ? " [PAUSED]" : " [PLAYING]";
+
+            Console.WriteLine("Now Playing\n");
+            Console.WriteLine($"Playing: {song.Title} by {string.Join(", ", song.Artists)}");
+            Console.WriteLine($"Artist: {string.Join(", ", song.Artists)}");
+            Console.WriteLine($"Genre : {song.SongGenre}");
+            Console.WriteLine($"\nStatus: {statusTag}");
+            Console.WriteLine(client.GetCurrentSongTime());
+
             Console.WriteLine("\n[P] Pause");
             Console.WriteLine("[R] Resume");
             Console.WriteLine("[N] Next");
             Console.WriteLine("[0] Back");
 
             Console.Write("-> ");
-            string input = Console.ReadLine() ?? "0";
+
+            // check for user input without blocking the loop
+            // this allows the UI (time) to keep updating smoothly
+            // wait up to ~5 seconds (100 × 50ms) before refreshing the screen
+            int loopCounter = 0;
+            while (!Console.KeyAvailable && loopCounter < 100)
+            {
+                Thread.Sleep(50); // small delay to avoid high CPU usage
+                loopCounter++;
+            }
+
+            // if no key was pressed during the wait period and restart the loop to redraw the UI (time update)
+            if (!Console.KeyAvailable)
+            {
+                continue;
+            }
+
+            // use ReadKey instead of ReadLine so input does not block updates and the progress display keeps moving in real time
+            ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
+            string input = keyInfo.KeyChar.ToString().ToLower();
 
             switch (input.ToLower())
             {
                 case "p":
                     client.Pause();
-                    Console.ReadLine();
+                    isPaused = true;
                     break;
 
                 case "r":
                     client.Resume();
-                    Console.ReadLine();
+                    isPaused = false;
                     break;
 
                 case "n":
                     client.NextSong();
-                    Console.ReadLine();
+                    isPaused = false;
+                    if (client.CurrentlyPlaying is Song nextSong)
+                    {
+                        song = nextSong;
+                    }
                     break;
 
                 case "0":
@@ -165,8 +212,11 @@ internal class Program
 
                 default:
                     Console.WriteLine("Invalid option");
+                    Thread.Sleep(1000);
                     break;
             }
+
+
         }
     }
 
@@ -180,7 +230,7 @@ internal class Program
         Console.WriteLine("│──────────────────────────────────────────────────────────────│");
         Console.WriteLine("│  Logged in: Main users                                       │");
         Console.WriteLine("│                                                              │");
-        Console.WriteLine("│  Main menu                                                   │");
+        Console.WriteLine("│  Main menu (Choose a number)                                 │");
         Console.WriteLine("│──────────────────────────────────────────────────────────────│");
         Console.WriteLine("│  [1] Songs                                                   │");
         Console.WriteLine("│  [2] Albums                                                  │");
