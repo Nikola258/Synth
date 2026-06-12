@@ -1,15 +1,133 @@
 # Synth
-Music program created in Visual Studio using C# and CLI.
 
-# WMPLib Essential Classes & Interfaces
-- WindowsMediaPlayer: The primary entry-point class to instantiate a standalone, programmatic player without a UI.
-- IWMPControls / IWMPControls3: Controls playback functionality like play(), stop(), pause(), fastForward(), and seeking via currentPosition.
-- IWMPMedia: Exposes metadata and properties (e.g., duration, author, track name) for individual media items.
-- IWMPPlaylist: Allows you to manage lists of media files and cycle through tracks.
- 
- ### Example of usage
- ```C#
-WindowsMediaPlayer _player = new WMPLib.WindowsMediaPlayer();
-_player.URL = @"C:\Path\To\Your\MediaFile.mp3";
+A simple CLI-based music player built in C# using **WMPLib (Windows Media Player API)**.
+
+---
+
+# WMPLib
+
+WMPLib is a .NET wrapper around the Windows Media Player engine.
+It lets you play audio files.
+
+It  kinda like using Windows Media Player behind the scenes, but controlling it with code.
+
+
+---
+
+# How WMPLib Works
+
+Instead of handling audio decoding it, you can:
+
+1. Create a media player instance
+2. Load a file
+3. Control playback (play, pause, stop)
+4. Read metadata (duration, title, etc.)
+
+---
+
+# Essential Classes & Interfaces
+
+## `WindowsMediaPlayer`
+
+Main class that controls everything.
+
+```csharp
+var _player = new WindowsMediaPlayer();
+```
+
+* Loads audio files
+* Controls playback
+* Gives access to media info
+
+---
+
+## `IWMPControls`
+
+Controls playback actions.
+
+```csharp
 _player.controls.play();
- ```
+_player.controls.pause();
+_player.controls.stop();
+_player.currentMedia.duration
+```
+
+Other useful features:
+
+currentPosition → get/set current time in seconds
+Seek through a song
+
+---
+
+## `IWMPMedia`
+
+Represents a loaded media file.
+
+```csharp
+IWMPMedia media = _player.newMedia("song.mp3");
+double duration = media.duration;
+```
+
+Provides:
+
+* Duration (in seconds)
+* Metadata (artist, title, etc.)
+
+Note: Duration may not be immediately available when loading.
+
+---
+
+## `IWMPPlaylist`
+
+Used for handling multiple songs.
+
+* Add/remove tracks
+* Loop through songs
+
+*(Not heavily used in this project, since we manage songs manually.)*
+
+---
+
+# ▶Basic Example
+
+```csharp
+using WMPLib;
+
+var _player = new WindowsMediaPlayer();
+
+// Load a file
+_player.URL = @"C:\Music\song.mp3";
+
+// Play it
+_player.controls.play();
+```
+
+---
+
+# Getting Song Duration
+
+```csharp
+var _player = new WindowsMediaPlayer();
+IWMPMedia media = _player.newMedia(@"C:\Music\song.mp3");
+
+double duration = media.duration; // in seconds
+```
+
+Convert to readable format:
+
+```csharp
+TimeSpan time = TimeSpan.FromSeconds(duration);
+Console.WriteLine(time.ToString(@"mm\:ss"));
+```
+
+---
+
+# Important Notes
+
+* WMPLib is Windows-only
+* Media loading is asynchronous
+* Duration might return `0` if accessed too early
+* Works best with local files (not streaming)
+
+---
+
