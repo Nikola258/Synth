@@ -9,14 +9,14 @@ namespace Synth
         public string Title { get; set; }
         public List<Artist> Artists { get; set; }
         public Genres SongGenre { get; set; }
-        public int Duration { get; set; }
+        public double Duration { get; set; }
         public string FilePath { get; set; }
 
         // for iplayable
-        public int Length => Duration;
+        public double Length => Duration;
 
 
-        public Song(string title, List<Artist> artists, int duration, Genres genre, string filePath = "")
+        public Song(string title, List<Artist> artists, double duration, Genres genre, string filePath = "")
         {
             this.Title = title;
             this.Artists = artists;
