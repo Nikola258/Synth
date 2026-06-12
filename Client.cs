@@ -74,19 +74,23 @@ namespace Synth
 
         public void NextSong()
         {
-            if (CurrentlyPlaying is Song song)
+            // Check if CurrentlyPlaying is actually a Song
+            if (CurrentlyPlaying is not Song song)
+                return;
+
+            // Find where this song is in the list (0, 1, 2, etc)
+            int index = AllSongs.IndexOf(song);
+
+            // If this is the last song, stop
+            if (index >= AllSongs.Count - 1)
             {
-                int currentIndex = AllSongs.IndexOf(song);
-                if (currentIndex < AllSongs.Count - 1)
-                {
-                    SelectSong(currentIndex + 2); // +2 because SelectSong expects 1-based index
-                    Play();
-                }
-                else
-                {
-                    Console.WriteLine("No next song available.");
-                }
+                Console.WriteLine("No next song available.");
+                return;
             }
+
+            // Play the next song
+            SelectSong(index + 2);
+            Play();
         }
         
 
