@@ -11,8 +11,9 @@ namespace Synth
 
         
         public Album(List<Artist> artist, string title, List<Song> songs) {
-            Artists = artist;
-            Title = title;
+
+            this.Artists = artist;
+            this.Title = title;
         }
 
         public List<Artist> ShowArtists()

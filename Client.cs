@@ -13,6 +13,7 @@ namespace Synth
     {
 
         private List<Song> AllSongs { get; set; }
+        private List<Album> AllAlbums { get; set; }
         private const int SongsPerPage = 6;
         public IPlayable CurrentlyPlaying { get; private set; }
         private readonly WindowsMediaPlayer _player;
@@ -20,7 +21,9 @@ namespace Synth
         public Client()
         {
             _player = new WindowsMediaPlayer();
+            AllAlbums = new List<Album>();
             AllSongs = LoadSongs();
+            
             CurrentlyPlaying = null;
         }
 
@@ -108,6 +111,11 @@ namespace Synth
                 return new Song(title, artists, GetDuration(filePath), genre, filePath);
             }
 
+            Album CreateAlbum(string title, List<Artist> artists, List<Song> albumSongs)
+            {
+                return new Album(artists, title, albumSongs);
+            }
+
             // artists
             var hippoRap = new Artist("Hippo Rap");
             var madMax = new Artist("Mad Max");
@@ -132,6 +140,15 @@ namespace Synth
                 CreateSong("WEEDnin out haaard", new List<Artist> { afroWeed }, Genres.Jazz, @"C:\music\NormalTechno.mp3"),
                 CreateSong("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, Genres.Jazz, @"C:\music\WhiskyBlues.mp3"),
             };
+
+            // albums
+            var hippoAlbum = CreateAlbum("Hippo Hits", new List<Artist> { hippoRap }, new List<Song> { songs[0] });
+            var madMaxAlbum = CreateAlbum("Mad Max's Greatest", new List<Artist> { madMax }, new List<Song> { songs[1] });
+            var girlyAlbum = CreateAlbum("Girly Freak's Finest", new List<Artist> { girlyFreak }, new List<Song> { songs[2] });
+
+            AllAlbums.Add(hippoAlbum);
+            AllAlbums.Add(madMaxAlbum);
+            AllAlbums.Add(girlyAlbum);
 
             return songs;
         }
