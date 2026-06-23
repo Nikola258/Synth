@@ -21,8 +21,7 @@ internal class Program
                     HandleSongsMenu();
                     break;
                 case "2": // Albums
-                    Console.WriteLine("Albums feature coming soon...");
-                    Console.ReadLine();
+                    HandleAlbumsMenu();
                     break;
                 case "3": // Artists
                     Console.WriteLine("Artists feature coming soon...");
@@ -100,6 +99,100 @@ internal class Program
             {
                 Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
                 Console.Clear();
+            }
+        }
+    }
+
+    // album menu
+    private static void HandleAlbumsMenu()
+    {
+        Console.Clear();
+        int currentPage = 1;
+        Client client = new Client();
+
+        while (true)
+        {
+            client.ShowAllAlbums(currentPage);
+            Console.WriteLine("\n- [page {number}] to switch page");
+            Console.WriteLine("- [select {number}] to select a album to see details");
+            Console.WriteLine("- [back] to go back");
+            Console.Write("\nEnter command: ");
+            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
+            string command = parts[0];
+
+            if (command == "back")
+            {
+                break;
+            }
+
+            else if (command == "page" && parts.Length > 1)
+            {
+                if (int.TryParse(parts[1], out currentPage))
+                {
+                    Console.Clear();
+                }
+                else
+                {
+                    Console.WriteLine("Invalid page number.");
+                    Console.ReadLine(); // Pause to let user read error
+                    Console.Clear();
+                }
+            }
+            else if (command == "select" && parts.Length > 1)
+            {
+                if (int.TryParse(parts[1], out int songIndex))
+                {
+                    // IMPORTANT!
+                    // will be select album to see it's contents
+                    //client.SelectAlbum();
+                    //HandleAlbumsOptionsMenu(client);
+                    Console.Clear();
+                }
+                else
+                {
+                    Console.WriteLine("Invalid song number.");
+                    Console.Clear();
+                }
+            }
+            else
+            {
+                Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
+                Console.Clear();
+            }
+        }
+    }
+
+    private static void HandleAlbumOptionsMenu(Client client)
+    {
+        while (true)
+        {
+            Console.WriteLine("\n[1] Play Album");
+            Console.WriteLine("[2] Add Album to playlist (not working)");
+            Console.WriteLine("[0] Back");
+
+            Console.Write("-> ");
+            string input = Console.ReadLine() ?? "0";
+
+            switch (input)
+            {
+                case "1":
+
+                    client.Play();
+                    HandleNowPlayingMenu(client);
+                    //Console.ReadLine();
+                    break;
+
+                case "2":
+                    Console.WriteLine("Feature coming soon...");
+                    //Console.ReadLine();
+                    break;
+
+                case "0":
+                    return;
+
+                default:
+                    Console.WriteLine("Invalid option");
+                    break;
             }
         }
     }

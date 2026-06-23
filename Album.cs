@@ -8,12 +8,14 @@ namespace Synth
     {
         private List<Artist> Artists;
         public string Title { get; private set; }
+        public List<Song> Songs;
 
         
         public Album(List<Artist> artist, string title, List<Song> songs) {
 
             this.Artists = artist;
             this.Title = title;
+            this.Songs = songs;
         }
 
         public List<Artist> ShowArtists()
