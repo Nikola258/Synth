@@ -13,14 +13,17 @@ namespace Synth
     {
 
         private List<Song> AllSongs { get; set; }
-        private const int SongsPerPage = 6;
+        private List<Album> AllAlbums { get; set; }
+        private const int ItemsPerPage = 6;
         public IPlayable CurrentlyPlaying { get; private set; }
         private readonly WindowsMediaPlayer _player;
 
         public Client()
         {
             _player = new WindowsMediaPlayer();
+            AllAlbums = new List<Album>();
             AllSongs = LoadSongs();
+            
             CurrentlyPlaying = null;
         }
 
@@ -108,6 +111,11 @@ namespace Synth
                 return new Song(title, artists, GetDuration(filePath), genre, filePath);
             }
 
+            Album CreateAlbum(string title, List<Artist> artists, List<Song> albumSongs)
+            {
+                return new Album(artists, title, albumSongs);
+            }
+
             // artists
             var hippoRap = new Artist("Hippo Rap");
             var madMax = new Artist("Mad Max");
@@ -133,13 +141,22 @@ namespace Synth
                 CreateSong("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, Genres.Jazz, @"C:\music\WhiskyBlues.mp3"),
             };
 
+            // albums
+            var hippoAlbum = CreateAlbum("Hippo Hits", new List<Artist> { hippoRap }, new List<Song> { songs[0] });
+            var madMaxAlbum = CreateAlbum("Mad Max's Greatest", new List<Artist> { madMax }, new List<Song> { songs[1] });
+            var girlyAlbum = CreateAlbum("Girly Freak's Finest", new List<Artist> { girlyFreak }, new List<Song> { songs[2], songs[4] });
+
+            AllAlbums.Add(hippoAlbum);
+            AllAlbums.Add(madMaxAlbum);
+            AllAlbums.Add(girlyAlbum);
+
             return songs;
         }
 
         public void ShowAllSongs(int pageNumber)
         {
             // calculate total pages
-            int totalPages = (int)Math.Ceiling((double)AllSongs.Count / SongsPerPage);
+            int totalPages = (int)Math.Ceiling((double)AllSongs.Count / ItemsPerPage);
 
             // validate
             if (pageNumber < 1 || pageNumber > totalPages)
@@ -153,7 +170,7 @@ namespace Synth
             Console.WriteLine("-----------------------------------\n");
 
             // calculate where to start reading from the list
-            int startIndex = (pageNumber - 1) * SongsPerPage;
+            int startIndex = (pageNumber - 1) * ItemsPerPage;
 
             int currentLoopIndex = 0; // tracks every song we pass by
             int songsPrinted = 0;     // tracks how many displayed
@@ -169,7 +186,7 @@ namespace Synth
                     songsPrinted++;
 
                     // stop when 6 songs are printed
-                    if (songsPrinted == SongsPerPage)
+                    if (songsPrinted == ItemsPerPage)
                     {
                         break;
                     }
@@ -193,6 +210,100 @@ namespace Synth
 
             
             return $"{currentStr} / {totalStr}";
+        }
+
+        public void ShowAllAlbums(int pageNumber)
+        {
+            // calculate total pages
+            int totalPages = (int)Math.Ceiling((double)AllAlbums.Count / ItemsPerPage);
+
+            // validate
+            if (pageNumber < 1 || pageNumber > totalPages)
+            {
+                Console.WriteLine($"\n[Error] Invalid page. Please choose between page 1 and {totalPages}.");
+                return;
+            }
+
+
+            Console.WriteLine("\nTitle - Artist(s) - Genre");
+            Console.WriteLine("-----------------------------------\n");
+
+            // calculate where to start reading from the list
+            int startIndex = (pageNumber - 1) * ItemsPerPage;
+
+            int currentLoopIndex = 0; // tracks every song we pass by
+            int songsPrinted = 0;     // tracks how many displayed
+
+
+            foreach (var album in AllAlbums)
+            {
+                // only print if we have skipped the songs from previous pages
+                if (currentLoopIndex >= startIndex)
+                {
+                    // print the song ( 1-based indexing for the UI)
+                    Console.WriteLine($"{album}, ({album.Songs.Count} songs)");
+                    songsPrinted++;
+
+                    // stop when 6 songs are printed
+                    if (songsPrinted == ItemsPerPage)
+                    {
+                        break;
+                    }
+                }
+
+                currentLoopIndex++;
+            }
+            Console.WriteLine($"\n----------------------- Page: {pageNumber} / {totalPages}");
+        }
+
+        public void SelectAlbum(int albumIndex)
+        {
+            int index = albumIndex - 1; // convert to 0-based
+
+
+            if (albumIndex <= 0 || albumIndex > AllAlbums.Count)
+            {
+                Console.WriteLine("[Error] Invalid song selection.");
+                return;
+            }
+
+            ShowAllSongsInAlbums(index);
+        }
+
+        public void ShowAllSongsInAlbums(int pageNumber)
+        {
+            // calculate total pages
+            int totalPages = (int)Math.Ceiling((double)AllSongs.Count / ItemsPerPage);
+
+            Console.WriteLine("\nTitle - Artist(s) - Genre");
+            Console.WriteLine("-----------------------------------\n");
+
+            // calculate where to start reading from the list
+            int startIndex = (pageNumber - 1) * ItemsPerPage;
+
+            int currentLoopIndex = 0; // tracks every song we pass by
+            int songsPrinted = 0;     // tracks how many displayed
+
+
+            foreach (var song in AllAlbums)
+            {
+                // only print if we have skipped the songs from previous pages
+                if (currentLoopIndex >= startIndex)
+                {
+                    // print the song ( 1-based indexing for the UI)
+                    Console.WriteLine($"[{currentLoopIndex + 1}] {song}");
+                    songsPrinted++;
+
+                    // stop when 6 songs are printed
+                    if (songsPrinted == ItemsPerPage)
+                    {
+                        break;
+                    }
+                }
+
+                currentLoopIndex++;
+            }
+            Console.WriteLine($"\n----------------------- Page: {pageNumber} / {totalPages}");
         }
     }
 }
