@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Synth
+﻿namespace Synth
 {
+    // This interface defines what any "playable" thing must be able to do.
+    // Both Song (and later Album/Playlist if needed) can implement this.
     internal interface IPlayable
     {
-        void Play();
-        void Pause();
-        void Next();
-        void Stop();
-        double Length { get; }
         string Title { get; }
+        double Length { get; }
     }
 }
