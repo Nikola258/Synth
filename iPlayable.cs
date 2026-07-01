@@ -1,7 +1,6 @@
 ﻿namespace Synth
 {
-    // This interface defines what any "playable" thing must be able to do.
-    // Both Song (and later Album/Playlist if needed) can implement this.
+    // this interface defines what any "playable" thing must be able to do
     internal interface IPlayable
     {
         string Title { get; }
