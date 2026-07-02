@@ -11,22 +11,142 @@ namespace Synth
 
     internal class Client
     {
-
+        private List<User> AllUsers { get; set; }
+        // The user who is currently logged in (must be a SuperUser to use playlists/friends)
+        public SuperUser ActiveUser { get; private set; }
         private List<Song> AllSongs { get; set; }
         private List<Album> AllAlbums { get; set; }
         private const int ItemsPerPage = 6;
         public IPlayable CurrentlyPlaying { get; private set; }
         private readonly WindowsMediaPlayer _player;
 
-        public Client()
+        public Client(List<User> users, List<Album> albums, List<Song> songs)
         {
-            _player = new WindowsMediaPlayer();
-            AllAlbums = new List<Album>();
-            AllSongs = LoadSongs();
-            
-            CurrentlyPlaying = null;
+            AllUsers = users;
+            AllAlbums = albums;
+            AllSongs = songs;
         }
 
+        // ─────────────────────────────────────────────
+        // USER MANAGEMENT
+        // ─────────────────────────────────────────────
+
+        public void SetActiveUser(User user)
+        {
+            // Only SuperUser accounts can use playlists and friends
+            if (user is SuperUser superUser)
+            {
+                ActiveUser = superUser;
+                Console.WriteLine($"Logged in as: {superUser.Name}");
+            }
+            else
+            {
+                Console.WriteLine("[Error] This user does not have SuperUser access.");
+            }
+        }
+
+        // Print all users with a numbered list
+        public void ShowAllUsers()
+        {
+            Console.WriteLine("\n- Users -");
+            for (int i = 0; i < AllUsers.Count; i++)
+            {
+                Console.WriteLine($"[{i + 1}] {AllUsers[i]}");
+            }
+        }
+
+        // Select a user by 1-based index and make them active
+        public void SelectUser(int index)
+        {
+            int i = index - 1;
+            if (i < 0 || i >= AllUsers.Count)
+            {
+                Console.WriteLine("[Error] Invalid user selection.");
+                return;
+            }
+            SetActiveUser(AllUsers[i]);
+        }
+
+        // Select one of the active user's playlists by 1-based index
+        public Playlist SelectUserPlaylist(int index)
+        {
+            if (ActiveUser == null)
+            {
+                Console.WriteLine("[Error] No user logged in.");
+                return null;
+            }
+
+            var playlist = ActiveUser.SelectPlaylist(index);
+            if (playlist == null)
+                Console.WriteLine("[Error] Invalid playlist selection.");
+
+            return playlist;
+        }
+
+        // ─────────────────────────────────────────────
+        // PLAYLIST MANAGEMENT  (delegates to SuperUser)
+        // ─────────────────────────────────────────────
+
+        public void CreatePlaylist(string title)
+        {
+            if (!CheckActiveUser()) return;
+            ActiveUser.CreatePlayList(title);
+            Console.WriteLine($"Playlist \"{title}\" created.");
+        }
+
+        public void ShowPlaylists()
+        {
+            ShowUserPlaylists();
+        }
+
+        public void SelectPlaylist(int index)
+        {
+            // Stored in the calling menu — see Program.cs
+            SelectUserPlaylist(index);
+        }
+
+        public void RemovePlaylist(int index)
+        {
+            if (!CheckActiveUser()) return;
+            ActiveUser.RemovePlayList(index);
+            Console.WriteLine("Playlist removed.");
+        }
+
+        // Add a song (from AllSongs) to a playlist
+        public void AddToPlaylist(int songIndex, Playlist playlist)
+        {
+            if (!CheckActiveUser()) return;
+            int i = songIndex - 1;
+            if (i < 0 || i >= AllSongs.Count)
+            {
+                Console.WriteLine("[Error] Invalid song index.");
+                return;
+            }
+            ActiveUser.AddToPlayList(AllSongs[i], playlist);
+            Console.WriteLine($"\"{AllSongs[i].Title}\" added to \"{playlist.Title}\".");
+        }
+
+        // Remove a song from a playlist by its 1-based position in the playlist
+        public void RemoveFromPlaylist(int index, Playlist playlist)
+        {
+            if (!CheckActiveUser()) return;
+            ActiveUser.RemoveFromPlayList(index, playlist);
+            Console.WriteLine("Song removed from playlist.");
+        }
+
+        public void ShowSongsInPlaylist(Playlist playlist)
+        {
+            if (playlist == null) return;
+            var items = playlist.ShowPlayables();
+            if (items.Count == 0)
+            {
+                Console.WriteLine("This playlist is empty.");
+                return;
+            }
+            Console.WriteLine($"\n── Songs in \"{playlist.Title}\" -");
+            for (int i = 0; i < items.Count; i++)
+                Console.WriteLine($"[{i + 1}] {items[i].Title}");
+        }
         public void SelectSong(int songIndex)
         {
             int index = songIndex - 1; // convert to 0-based
