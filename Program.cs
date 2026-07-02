@@ -480,11 +480,116 @@ internal class Program
         Console.WriteLine("\nPress Enter to return...");
         Console.ReadLine();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // FRIENDS MENU
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static void HandleFriendsMenu()
+    {
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine("-- Friends --");
+            client.ShowFriends();
+            Console.WriteLine("\n[add] add a friend from user list");
+            Console.WriteLine("[remove N] remove friend at position N");
+            Console.WriteLine("[view N] view playlists of friend N");
+            Console.WriteLine("[back] go back");
+            Console.Write("\n-> ");
+
+            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
+            string command = parts[0];
+
+            if (command == "back")
+            {
+                break;
+            }
+            else if (command == "add")
+            {
+                Console.Clear();
+                Console.WriteLine("-- All Users --");
+                client.ShowAllUsers();
+                Console.Write("\nUser number to add as friend: ");
+                if (int.TryParse(Console.ReadLine(), out int userIndex))
+                {
+                    client.AddFriend(userIndex);
+                }
+                Console.ReadLine();
+            }
+            else if (command == "remove" && parts.Length > 1 && int.TryParse(parts[1], out int removeIndex))
+            {
+                client.RemoveFriend(removeIndex);
+                Console.ReadLine();
+            }
+            else if (command == "view" && parts.Length > 1 && int.TryParse(parts[1], out int viewIndex))
+            {
+                var friend = client.SelectFriend(viewIndex);
+                if (friend != null)
+                    HandleFriendPlaylistsMenu(friend);
+            }
+            else
+            {
+                Console.WriteLine("Unknown command. Press Enter.");
+                Console.ReadLine();
+            }
+        }
+    }
+
+    // Browse a friend's playlists and their songs
+    private static void HandleFriendPlaylistsMenu(User friend)
+    {
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine($"-- {friend.Name}'s Playlists --");
+
+            var playlists = friend.ShowPlaylists();
+            if (playlists.Count == 0)
+            {
+                Console.WriteLine("This friend has no playlists.");
+                Console.ReadLine();
+                return;
+            }
+
+            for (int i = 0; i < playlists.Count; i++)
+                Console.WriteLine($"[{i + 1}] {playlists[i]}");
+
+            Console.WriteLine("\n[select N] view songs in playlist N");
+            Console.WriteLine("[back] go back");
+            Console.Write("\n-> ");
+
+            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
+            string command = parts[0];
+
+            if (command == "back") break;
+            else if (command == "select" && parts.Length > 1 && int.TryParse(parts[1], out int index))
+            {
+                int i = index - 1;
+                if (i >= 0 && i < playlists.Count)
+                {
+                    Console.Clear();
+                    client.ShowSongsInPlaylist(playlists[i]);
+                    Console.WriteLine("\nPress Enter to go back.");
+                    Console.ReadLine();
+                }
+            }
+            else
+            {
+                Console.WriteLine("Unknown command. Press Enter.");
+                Console.ReadLine();
+            }
+        }
+    }
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // WELCOME SCREEN
+    // ─────────────────────────────────────────────────────────────────────────
+
     private static void ShowWelcomeScreen()
     {
         Console.Clear();
-        Console.WriteLine("╭──────────────────────────────────────────────────────────────╮");
-        Console.WriteLine("│                  Synth CLI player - Console                  │");
         // add user variable and then add it to the main screen insted of just the text "user"
         string user = client.ActiveUser?.Name ?? "Guest";
         Console.WriteLine("|──────────────────────────────────────────────────────────────|");

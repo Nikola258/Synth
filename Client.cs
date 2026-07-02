@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+using System.Drawing;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using WMPLib;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Synth
 {
@@ -147,6 +148,87 @@ namespace Synth
             for (int i = 0; i < items.Count; i++)
                 Console.WriteLine($"[{i + 1}] {items[i].Title}");
         }
+
+        // ─────────────────────────────────────────────
+        // FRIENDS  (delegates to SuperUser)
+        // ─────────────────────────────────────────────
+
+        public void ShowFriends()
+        {
+            if (!CheckActiveUser()) return;
+            var friends = ActiveUser.ShowFriends();
+            if (friends.Count == 0)
+            {
+                Console.WriteLine("You have no friends added yet.");
+                return;
+            }
+            Console.WriteLine($"\n- Friends of {ActiveUser.Name} -");
+            for (int i = 0; i < friends.Count; i++)
+                Console.WriteLine($"[{i + 1}] {friends[i]}");
+        }
+
+        // Returns the selected friend so the menu can show their playlists
+        public User SelectFriend(int index)
+        {
+            if (!CheckActiveUser()) return null;
+            var friends = ActiveUser.ShowFriends();
+            int i = index - 1;
+            if (i < 0 || i >= friends.Count)
+            {
+                Console.WriteLine("[Error] Invalid friend selection.");
+                return null;
+            }
+            return friends[i];
+        }
+
+        // Add a user from AllUsers as a friend (by 1-based index)
+        public void AddFriend(int index)
+        {
+            if (!CheckActiveUser()) return;
+            int i = index - 1;
+            if (i < 0 || i >= AllUsers.Count)
+            {
+                Console.WriteLine("[Error] Invalid user selection.");
+                return;
+            }
+            var person = AllUsers[i];
+            ActiveUser.AddFriend(person);
+            Console.WriteLine($"{person.Name} added as a friend.");
+        }
+
+        // Remove a friend by their 1-based index in the friends list
+        public void RemoveFriend(int index)
+        {
+            if (!CheckActiveUser()) return;
+            var friends = ActiveUser.ShowFriends();
+            int i = index - 1;
+            if (i < 0 || i >= friends.Count)
+            {
+                Console.WriteLine("[Error] Invalid friend selection.");
+                return;
+            }
+            var person = friends[i];
+            ActiveUser.RemoveFriend(person);
+            Console.WriteLine($"{person.Name} removed from friends.");
+        }
+
+
+        // ─────────────────────────────────────────────
+        // HELPERS
+        // ─────────────────────────────────────────────
+
+        // Small helper: prints an error and returns false if no user is logged in
+        private bool CheckActiveUser()
+        {
+            if (ActiveUser == null)
+            {
+                Console.WriteLine("[Error] No user logged in. Please select a user first.");
+                return false;
+            }
+            return true;
+        }
+
+
         public void SelectSong(int songIndex)
         {
             int index = songIndex - 1; // convert to 0-based

@@ -8,6 +8,20 @@ namespace Synth
     {
         public SuperUser(string name) : base(name) { }
 
+        // --- Friends ---
+
+        public void AddFriend(User user)
+        {
+            // don't add the same friend twice
+            if (!Friends.Contains(user))
+                Friends.Add(user);
+        }
+
+        public void RemoveFriend(User user)
+        {
+            Friends.Remove(user);
+        }
+
         // --- Playlists ---
 
         public Playlist CreatePlayList(string title)

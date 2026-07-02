@@ -15,6 +15,14 @@ namespace Synth
         {
             Name = name;
         }
+
+        // returns the friend list
+        public List<User> ShowFriends()
+        {
+            return Friends;
+        }
+
+        // returns the playlist list
         public List<Playlist> ShowPlaylists()
         {
             return Playlists;
