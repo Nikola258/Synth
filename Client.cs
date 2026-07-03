@@ -1,40 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Drawing;
-using System.Runtime.Intrinsics.Arm;
-using System.Text;
-using WMPLib;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Synth
 {
-
+    // Client a controller of the application
+    // holds all data (songs, albums, users)
+    // does NOT handle WMPLib that is MusicPlayer
     internal class Client
     {
-        private List<User> AllUsers { get; set; }
-        // The user who is currently logged in (must be a SuperUser to use playlists/friends)
-        public SuperUser ActiveUser { get; private set; }
+        // --- Data ---
         private List<Song> AllSongs { get; set; }
         private List<Album> AllAlbums { get; set; }
-        private const int ItemsPerPage = 6;
-        public IPlayable CurrentlyPlaying { get; private set; }
-        private readonly WindowsMediaPlayer _player;
+        private List<User> AllUsers { get; set; }
 
+        // user who is currently logged in must be a SuperUser to use playlists/friends
+        public SuperUser ActiveUser { get; private set; }
+
+        // song that is selected / currently loaded into the player
+        public IPlayable CurrentlyPlaying { get; set; }
+
+        // Playback state
+        public bool Playing { get; private set; }
+        public bool Shuffle { get; private set; }
+        public bool Repeat { get; private set; }
+
+        // dedicated audio player keeps WMPLib out of Client
+        private readonly MusicPlayer _musicPlayer;
+
+        private const int ItemsPerPage = 6;
+
+        // Client receives its data via constructor
         public Client(List<User> users, List<Album> albums, List<Song> songs)
         {
             AllUsers = users;
             AllAlbums = albums;
             AllSongs = songs;
+            _musicPlayer = new MusicPlayer();
         }
 
-        // ─────────────────────────────────────────────
+        // -------------------────
         // USER MANAGEMENT
-        // ─────────────────────────────────────────────
+        // -------------------────
 
         public void SetActiveUser(User user)
         {
-            // Only SuperUser accounts can use playlists and friends
+            // only SuperUser accounts can use playlists and friends
             if (user is SuperUser superUser)
             {
                 ActiveUser = superUser;
@@ -46,17 +56,17 @@ namespace Synth
             }
         }
 
-        // Print all users with a numbered list
+        // all users with a numbered list
         public void ShowAllUsers()
         {
-            Console.WriteLine("\n- Users -");
+            Console.WriteLine("\n-- Users --");
             for (int i = 0; i < AllUsers.Count; i++)
             {
                 Console.WriteLine($"[{i + 1}] {AllUsers[i]}");
             }
         }
 
-        // Select a user by 1-based index and make them active
+        // select a user by 1-based index and make them active
         public void SelectUser(int index)
         {
             int i = index - 1;
@@ -68,7 +78,31 @@ namespace Synth
             SetActiveUser(AllUsers[i]);
         }
 
-        // Select one of the active user's playlists by 1-based index
+        // show the playlists
+        public void ShowUserPlaylists()
+        {
+            if (ActiveUser == null)
+            {
+                Console.WriteLine("[Error] No user logged in.");
+                return;
+            }
+
+            var playlists = ActiveUser.ShowPlaylists();
+
+            if (playlists.Count == 0)
+            {
+                Console.WriteLine("You have no playlists yet.");
+                return;
+            }
+
+            Console.WriteLine($"\n── Playlists of {ActiveUser.Name} ──");
+            for (int i = 0; i < playlists.Count; i++)
+            {
+                Console.WriteLine($"[{i + 1}] {playlists[i]}");
+            }
+        }
+
+        // select one of the active users playlists by 1-based index
         public Playlist SelectUserPlaylist(int index)
         {
             if (ActiveUser == null)
@@ -84,9 +118,139 @@ namespace Synth
             return playlist;
         }
 
-        // ─────────────────────────────────────────────
-        // PLAYLIST MANAGEMENT  (delegates to SuperUser)
-        // ─────────────────────────────────────────────
+        // -------------------────
+        // SONG DISPLAY
+        // -------------------────
+
+        public void ShowAllSongs(int pageNumber = 1)
+        {
+            ShowPage(AllSongs, pageNumber, song =>
+                $"{song} ({TimeSpan.FromSeconds(song.Duration):hh\\:mm\\:ss})");
+        }
+
+        // select a song from AllSongs by 1-based index
+        public void SelectSong(int index)
+        {
+            int i = index - 1;
+            if (i < 0 || i >= AllSongs.Count)
+            {
+                Console.WriteLine("[Error] Invalid song selection.");
+                return;
+            }
+            CurrentlyPlaying = AllSongs[i];
+            Console.WriteLine($"Selected: {AllSongs[i]}");
+        }
+
+        // -------------------────
+        // ALBUM DISPLAY
+        // -------------------────
+
+        public void ShowAllAlbums(int pageNumber = 1)
+        {
+            ShowPage(AllAlbums, pageNumber, album =>
+                $"{album} ({album.Songs.Count} songs)");
+        }
+
+        // select an album and store it as CurrentlyPlaying collection
+        // returns the album so the menu can show its songs
+        public Album SelectAlbum(int index)
+        {
+            int i = index - 1;
+            if (i < 0 || i >= AllAlbums.Count)
+            {
+                Console.WriteLine("[Error] Invalid album selection.");
+                return null;
+            }
+            return AllAlbums[i];
+        }
+
+        // show the songs inside a specific album
+        public void ShowSongsInAlbum(Album album, int pageNumber = 1)
+        {
+            if (album == null) return;
+            Console.WriteLine($"\n── Songs in \"{album.Title}\" ──");
+            ShowPage(album.Songs, pageNumber, song =>
+                $"{song} ({TimeSpan.FromSeconds(song.Duration):hh\\:mm\\:ss})");
+        }
+
+        // select a song from inside an album by 1-based index
+        public void SelectSongFromAlbum(Album album, int index)
+        {
+            if (album == null) return;
+            int i = index - 1;
+            var songs = album.Songs;
+            if (i < 0 || i >= songs.Count)
+            {
+                Console.WriteLine("[Error] Invalid song selection.");
+                return;
+            }
+            CurrentlyPlaying = songs[i];
+            Console.WriteLine($"Selected: {songs[i]}");
+        }
+
+        // -------------------────
+        // PLAYBACK  (using MusicPlayer)
+        // -------------------────
+
+        public void Play()
+        {
+            if (CurrentlyPlaying is not Song song)
+            {
+                Console.WriteLine("[Error] No song selected.");
+                return;
+            }
+            _musicPlayer.Play(song);
+            Playing = true;
+        }
+
+        public void Pause()
+        {
+            _musicPlayer.Pause();
+            Playing = false;
+        }
+
+        public void Resume()
+        {
+            _musicPlayer.Resume();
+            Playing = true;
+        }
+
+        public void Stop()
+        {
+            _musicPlayer.Stop();
+            Playing = false;
+        }
+
+        // skip to the next song in AllSongs
+        public void NextSong()
+        {
+            if (_musicPlayer.CurrentSong == null) return;
+
+            int index = AllSongs.IndexOf(_musicPlayer.CurrentSong);
+            if (index < 0 || index >= AllSongs.Count - 1)
+            {
+                Console.WriteLine("No next song.");
+                return;
+            }
+
+            CurrentlyPlaying = AllSongs[index + 1];
+            Play();
+        }
+
+        public void SetShuffle(bool value) => Shuffle = value;
+        public void SetRepeat(bool value) => Repeat = value;
+
+        // returns "00:01:23 / 00:03:45"
+        public string GetCurrentSongTime() => _musicPlayer.GetTimeDisplay();
+
+        // lets the now-playing screen know the current song details
+        public Song GetCurrentSong() => _musicPlayer.CurrentSong;
+
+        public bool IsPaused => _musicPlayer.IsPaused;
+
+        // -------------------────
+        // PLAYLIST MANAGEMENT  (uses SuperUser)
+        // -------------------────
 
         public void CreatePlaylist(string title)
         {
@@ -102,7 +266,7 @@ namespace Synth
 
         public void SelectPlaylist(int index)
         {
-            // Stored in the calling menu — see Program.cs
+            // stored in the calling menu — see Program.cs
             SelectUserPlaylist(index);
         }
 
@@ -113,7 +277,7 @@ namespace Synth
             Console.WriteLine("Playlist removed.");
         }
 
-        // Add a song (from AllSongs) to a playlist
+        // add a song (from AllSongs) to a playlist
         public void AddToPlaylist(int songIndex, Playlist playlist)
         {
             if (!CheckActiveUser()) return;
@@ -127,7 +291,7 @@ namespace Synth
             Console.WriteLine($"\"{AllSongs[i].Title}\" added to \"{playlist.Title}\".");
         }
 
-        // Remove a song from a playlist by its 1-based position in the playlist
+        // remove a song from a playlist by its 1-based position in the playlist
         public void RemoveFromPlaylist(int index, Playlist playlist)
         {
             if (!CheckActiveUser()) return;
@@ -144,14 +308,14 @@ namespace Synth
                 Console.WriteLine("This playlist is empty.");
                 return;
             }
-            Console.WriteLine($"\n── Songs in \"{playlist.Title}\" -");
+            Console.WriteLine($"\n── Songs in \"{playlist.Title}\" ──");
             for (int i = 0; i < items.Count; i++)
                 Console.WriteLine($"[{i + 1}] {items[i].Title}");
         }
 
-        // ─────────────────────────────────────────────
-        // FRIENDS  (delegates to SuperUser)
-        // ─────────────────────────────────────────────
+        // -------------------────
+        // FRIENDS  (uses SuperUser)
+        // -------------------────
 
         public void ShowFriends()
         {
@@ -162,12 +326,12 @@ namespace Synth
                 Console.WriteLine("You have no friends added yet.");
                 return;
             }
-            Console.WriteLine($"\n- Friends of {ActiveUser.Name} -");
+            Console.WriteLine($"\n── Friends of {ActiveUser.Name} ──");
             for (int i = 0; i < friends.Count; i++)
                 Console.WriteLine($"[{i + 1}] {friends[i]}");
         }
 
-        // Returns the selected friend so the menu can show their playlists
+        // returns the selected friend so the menu can show their playlists
         public User SelectFriend(int index)
         {
             if (!CheckActiveUser()) return null;
@@ -181,7 +345,7 @@ namespace Synth
             return friends[i];
         }
 
-        // Add a user from AllUsers as a friend (by 1-based index)
+        // add a user from AllUsers as a friend (by 1-based index)
         public void AddFriend(int index)
         {
             if (!CheckActiveUser()) return;
@@ -191,12 +355,12 @@ namespace Synth
                 Console.WriteLine("[Error] Invalid user selection.");
                 return;
             }
-            var person = AllUsers[i];
-            ActiveUser.AddFriend(person);
-            Console.WriteLine($"{person.Name} added as a friend.");
+            var user = AllUsers[i];
+            ActiveUser.AddFriend(user);
+            Console.WriteLine($"{user.Name} added as a friend.");
         }
 
-        // Remove a friend by their 1-based index in the friends list
+        // remove a friend by their 1-based index in the friends list
         public void RemoveFriend(int index)
         {
             if (!CheckActiveUser()) return;
@@ -207,305 +371,56 @@ namespace Synth
                 Console.WriteLine("[Error] Invalid friend selection.");
                 return;
             }
-            var person = friends[i];
-            ActiveUser.RemoveFriend(person);
-            Console.WriteLine($"{person.Name} removed from friends.");
+            var user = friends[i];
+            ActiveUser.RemoveFriend(user);
+            Console.WriteLine($"{user.Name} removed from friends.");
         }
 
-
-        // ─────────────────────────────────────────────
+        // -------------------────
         // HELPERS
-        // ─────────────────────────────────────────────
+        // -------------------────
 
-        // Small helper: prints an error and returns false if no user is logged in
+        // page switching helper works for any list type
+        // "display" is a function that turns one item into the string to print
+        private void ShowPage<T>(List<T> items, int pageNumber, Func<T, string> display)
+        {
+            int totalPages = (int)Math.Ceiling((double)items.Count / ItemsPerPage);
+
+            if (totalPages == 0)
+            {
+                Console.WriteLine("(nothing here yet)");
+                return;
+            }
+
+            // clamp page number so it never crashes
+            if (pageNumber < 1 || pageNumber > totalPages)
+            {
+                Console.WriteLine($"[Error] Page must be between 1 and {totalPages}.");
+                return;
+            }
+
+            Console.WriteLine("-----------------------");
+
+            int startIndex = (pageNumber - 1) * ItemsPerPage;
+            int endIndex = Math.Min(startIndex + ItemsPerPage, items.Count);
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                Console.WriteLine($"[{i + 1}] {display(items[i])}");
+            }
+
+            Console.WriteLine($"--------------- Page {pageNumber} / {totalPages}");
+        }
+
+        // small helper: prints an error and returns false if no user is logged in
         private bool CheckActiveUser()
         {
             if (ActiveUser == null)
             {
-                Console.WriteLine("[Error] No user logged in. Please select a user first.");
+                Console.WriteLine("[Error] No user logged in.");
                 return false;
             }
             return true;
-        }
-
-
-        public void SelectSong(int songIndex)
-        {
-            int index = songIndex - 1; // convert to 0-based
-
-
-            if (songIndex <= 0 || songIndex > AllSongs.Count)
-            {
-                Console.WriteLine("[Error] Invalid song selection.");
-                return;
-            }
-            _player.controls.stop();
-
-            CurrentlyPlaying = AllSongs[index];
-            Console.WriteLine($"\nSelected: {AllSongs[index]}");
-        }
-
-        public void Play()
-        {
-            if (CurrentlyPlaying == null)
-            {
-                Console.WriteLine("\n[Error] No song selected. Please select a song first.");
-                return;
-            }
-
-            if (CurrentlyPlaying is Song song)
-            {
-                _player.URL = song.FilePath;
-                _player.controls.play();
-
-            }
-            else
-            {
-                Console.WriteLine("[Error] Cannot play selection - missing file path.");
-            }
-        }
-
-        public void Pause()
-        {
-            _player.controls.pause();
-            Console.WriteLine("Song paused.");
-        }
-
-        public void Resume()
-        {
-            _player.controls.play();
-            Console.WriteLine("Song resumed.");
-        }
-
-        public void NextSong()
-        {
-            // Check if CurrentlyPlaying is actually a Song
-            if (CurrentlyPlaying is not Song song)
-                return;
-
-            // Find where this song is in the list (0, 1, 2, etc)
-            int index = AllSongs.IndexOf(song);
-
-            // If this is the last song, stop
-            if (index >= AllSongs.Count - 1)
-            {
-                Console.WriteLine("No next song available.");
-                return;
-            }
-
-            // Play the next song
-            SelectSong(index + 2);
-            Play();
-        }
-        
-
-        private List<Song> LoadSongs()
-        {
-            
-            double GetDuration(string filePath)
-            {
-                var media = _player.newMedia(filePath);
-                return media.duration;
-            }
-
-            Song CreateSong(string title, List<Artist> artists, Genres genre, string filePath)
-            {
-                return new Song(title, artists, GetDuration(filePath), genre, filePath);
-            }
-
-            Album CreateAlbum(string title, List<Artist> artists, List<Song> albumSongs)
-            {
-                return new Album(artists, title, albumSongs);
-            }
-
-            // artists
-            var hippoRap = new Artist("Hippo Rap");
-            var madMax = new Artist("Mad Max");
-            var girlyFreak = new Artist("Girly Freak");
-            var deadChild = new Artist("Dead Child");
-            var rickySand = new Artist("Ricky Sand");
-            var technoBlast = new Artist("Techno Blast");
-            var afroWeed = new Artist("Afro Weed");
-            var shoppensDad = new Artist("Shoppen's Dad");
-
-
-
-            // song list
-            var songs = new List<Song>
-            {
-                CreateSong("Hippo Rap Anthem", new List<Artist> { hippoRap }, Genres.Rap, @"C:\music\NeedForSpeedMostWanted.mp3"),
-                CreateSong("Mad Max Lullaby", new List<Artist> { madMax }, Genres.Soul, @"C:\music\TechnoBoom.mp3"),
-                CreateSong("Girly Freak Pop", new List<Artist> { girlyFreak }, Genres.Pop, @"C:\music\Nightcore.mp3"),
-                CreateSong("Dead Child's Rock", new List<Artist> { deadChild }, Genres.Rock, @"C:\music\RockMix.mp3"),
-                CreateSong("Ricky Sand's Country Ballad", new List<Artist> { rickySand }, Genres.Country, @"C:\music\BluesGuitar.mp3"),
-                CreateSong("Techno Blast", new List<Artist> { technoBlast }, Genres.Country, @"C:\music\DarkTechno.mp3"),
-                CreateSong("WEEDnin out haaard", new List<Artist> { afroWeed }, Genres.Jazz, @"C:\music\NormalTechno.mp3"),
-                CreateSong("You are a Emperor comquering whole Earth", new List<Artist> { shoppensDad }, Genres.Jazz, @"C:\music\WhiskyBlues.mp3"),
-            };
-
-            // albums
-            var hippoAlbum = CreateAlbum("Hippo Hits", new List<Artist> { hippoRap }, new List<Song> { songs[0] });
-            var madMaxAlbum = CreateAlbum("Mad Max's Greatest", new List<Artist> { madMax }, new List<Song> { songs[1] });
-            var girlyAlbum = CreateAlbum("Girly Freak's Finest", new List<Artist> { girlyFreak }, new List<Song> { songs[2], songs[4] });
-
-            AllAlbums.Add(hippoAlbum);
-            AllAlbums.Add(madMaxAlbum);
-            AllAlbums.Add(girlyAlbum);
-
-            return songs;
-        }
-
-        public void ShowAllSongs(int pageNumber)
-        {
-            // calculate total pages
-            int totalPages = (int)Math.Ceiling((double)AllSongs.Count / ItemsPerPage);
-
-            // validate
-            if (pageNumber < 1 || pageNumber > totalPages)
-            {
-                Console.WriteLine($"\n[Error] Invalid page. Please choose between page 1 and {totalPages}.");
-                return;
-            }
-
-
-            Console.WriteLine("\nTitle - Artist(s) - Genre");
-            Console.WriteLine("-----------------------------------\n");
-
-            // calculate where to start reading from the list
-            int startIndex = (pageNumber - 1) * ItemsPerPage;
-
-            int currentLoopIndex = 0; // tracks every song we pass by
-            int songsPrinted = 0;     // tracks how many displayed
-
-
-            foreach (var song in AllSongs)
-            {
-                // only print if we have skipped the songs from previous pages
-                if (currentLoopIndex >= startIndex)
-                {
-                    // print the song ( 1-based indexing for the UI)
-                    Console.WriteLine($"[{currentLoopIndex + 1}] " + song + $" ({TimeSpan.FromSeconds(song.Duration):hh\\:mm\\:ss}) " );
-                    songsPrinted++;
-
-                    // stop when 6 songs are printed
-                    if (songsPrinted == ItemsPerPage)
-                    {
-                        break;
-                    }
-                }
-
-                currentLoopIndex++;
-            }
-            Console.WriteLine($"\n----------------------- Page: {pageNumber} / {totalPages}");
-        }
-
-        public string GetCurrentSongTime()
-        {
-            if (CurrentlyPlaying is not Song song) return "";
-
-            // get current track time from the player
-            double current = _player.controls.currentPosition;
-
-            // convert raw seconds into clean h/m/s format
-            string currentStr = TimeSpan.FromSeconds(current).ToString(@"hh\:mm\:ss");
-            string totalStr = TimeSpan.FromSeconds(song.Duration).ToString(@"hh\:mm\:ss");
-
-            
-            return $"{currentStr} / {totalStr}";
-        }
-
-        public void ShowAllAlbums(int pageNumber)
-        {
-            // calculate total pages
-            int totalPages = (int)Math.Ceiling((double)AllAlbums.Count / ItemsPerPage);
-
-            // validate
-            if (pageNumber < 1 || pageNumber > totalPages)
-            {
-                Console.WriteLine($"\n[Error] Invalid page. Please choose between page 1 and {totalPages}.");
-                return;
-            }
-
-
-            Console.WriteLine("\nTitle - Artist(s) - Genre");
-            Console.WriteLine("-----------------------------------\n");
-
-            // calculate where to start reading from the list
-            int startIndex = (pageNumber - 1) * ItemsPerPage;
-
-            int currentLoopIndex = 0; // tracks every song we pass by
-            int songsPrinted = 0;     // tracks how many displayed
-
-
-            foreach (var album in AllAlbums)
-            {
-                // only print if we have skipped the songs from previous pages
-                if (currentLoopIndex >= startIndex)
-                {
-                    // print the song ( 1-based indexing for the UI)
-                    Console.WriteLine($"{album}, ({album.Songs.Count} songs)");
-                    songsPrinted++;
-
-                    // stop when 6 songs are printed
-                    if (songsPrinted == ItemsPerPage)
-                    {
-                        break;
-                    }
-                }
-
-                currentLoopIndex++;
-            }
-            Console.WriteLine($"\n----------------------- Page: {pageNumber} / {totalPages}");
-        }
-
-        public void SelectAlbum(int albumIndex)
-        {
-            int index = albumIndex - 1; // convert to 0-based
-
-
-            if (albumIndex <= 0 || albumIndex > AllAlbums.Count)
-            {
-                Console.WriteLine("[Error] Invalid song selection.");
-                return;
-            }
-
-            ShowAllSongsInAlbums(index);
-        }
-
-        public void ShowAllSongsInAlbums(int pageNumber)
-        {
-            // calculate total pages
-            int totalPages = (int)Math.Ceiling((double)AllSongs.Count / ItemsPerPage);
-
-            Console.WriteLine("\nTitle - Artist(s) - Genre");
-            Console.WriteLine("-----------------------------------\n");
-
-            // calculate where to start reading from the list
-            int startIndex = (pageNumber - 1) * ItemsPerPage;
-
-            int currentLoopIndex = 0; // tracks every song we pass by
-            int songsPrinted = 0;     // tracks how many displayed
-
-
-            foreach (var song in AllAlbums)
-            {
-                // only print if we have skipped the songs from previous pages
-                if (currentLoopIndex >= startIndex)
-                {
-                    // print the song ( 1-based indexing for the UI)
-                    Console.WriteLine($"[{currentLoopIndex + 1}] {song}");
-                    songsPrinted++;
-
-                    // stop when 6 songs are printed
-                    if (songsPrinted == ItemsPerPage)
-                    {
-                        break;
-                    }
-                }
-
-                currentLoopIndex++;
-            }
-            Console.WriteLine($"\n----------------------- Page: {pageNumber} / {totalPages}");
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Synth
     // DataLoader creates all the sample data 
     internal static class DataLoader
     {
-        public static (List<Album> albums, List<Song> songs) Load()
+        public static (List<User> users, List<Album> albums, List<Song> songs) Load()
         {
             // need WMP only to read the file duration
             var wmp = new WindowsMediaPlayer();
@@ -87,7 +87,19 @@ namespace Synth
             };
 
 
-            return ( albums, songs);
+            // -- Users
+            var alice = new SuperUser("Alice");
+            var bob = new SuperUser("Bob");
+            var cara = new SuperUser("Cara");
+
+            // Alice have starter playlist
+            var alicePlaylist = alice.CreatePlayList("Alice's Favourites");
+            alicePlaylist.Add(songs[0]);
+            alicePlaylist.Add(songs[2]);
+
+            var users = new List<User> { alice, bob, cara };
+
+            return (users, albums, songs);
         }
     }
 }

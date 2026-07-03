@@ -1,21 +1,27 @@
-﻿using Synth;
+﻿using System;
+using System.Threading;
+using Synth;
 
 internal class Program
 {
-    // after
+    // one Client for the whole app
+    static Client client;
+
     private static void Main(string[] args)
     {
-        // Load all data and create the Client
+        // load all data and create the Client
         var (users, albums, songs) = DataLoader.Load();
         client = new Client(users, albums, songs);
 
-        // Ask the user to pick an account before showing the main menu
+        // logging screen
         HandleUserSelectScreen();
 
-        // Main loop
+        // main loop
         while (true)
         {
+            ShowWelcomeScreen();
             string input = Console.ReadLine() ?? "0";
+
             switch (input.Trim())
             {
                 case "1": HandleSongsMenu(); break;
@@ -34,288 +40,23 @@ internal class Program
         }
     }
 
-        private static void HandleSongsMenu()
-    {
-        Console.Clear();
-        int currentPage = 1;
-        Client client = new Client();
+    // -----------------------------------
+    // LOGGIN SCREEN
+    // -----------------------------------
 
-        while (true)
-        {
-            client.ShowAllSongs(currentPage);
-            Console.WriteLine("\n- [page {number}] to switch page");
-            Console.WriteLine("- [select {number}] to select a song");
-            Console.WriteLine("- [back] to go back");
-            Console.Write("\nEnter command: ");
-            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
-            string command = parts[0];
-
-            if (command == "back")
-            {
-                break;
-            }
-
-            else if (command == "page" && parts.Length > 1)
-            {
-                if (int.TryParse(parts[1], out currentPage))
-                {
-                    Console.Clear();
-                }
-                else
-                {
-                    Console.WriteLine("Invalid page number.");
-                    Console.ReadLine(); // Pause to let user read error
-                    Console.Clear();
-                }
-            }
-            else if (command == "select" && parts.Length > 1)
-            {
-                if (int.TryParse(parts[1], out int songIndex))
-                {
-                    client.SelectSong(songIndex);
-                    HandleSongOptionsMenu(client);
-                    Console.Clear();
-                }
-                else
-                {
-                    Console.WriteLine("Invalid song number.");
-                    Console.Clear();
-                }
-            }
-            else
-            {
-                Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
-                Console.Clear();
-            }
-        }
-    }
-
-    // album menu
-    private static void HandleAlbumsMenu()
-    {
-        Console.Clear();
-        int currentPage = 1;
-        Client client = new Client();
-
-        while (true)
-        {
-            client.ShowAllAlbums(currentPage);
-            Console.WriteLine("\n- [page {number}] to switch page");
-            Console.WriteLine("- [select {number}] to select a album to see details");
-            Console.WriteLine("- [back] to go back");
-            Console.Write("\nEnter command: ");
-            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
-            string command = parts[0];
-
-            if (command == "back")
-            {
-                break;
-            }
-
-            else if (command == "page" && parts.Length > 1)
-            {
-                if (int.TryParse(parts[1], out currentPage))
-                {
-                    Console.Clear();
-                }
-                else
-                {
-                    Console.WriteLine("Invalid page number.");
-                    Console.ReadLine(); // Pause to let user read error
-                    Console.Clear();
-                }
-            }
-            else if (command == "select" && parts.Length > 1)
-            {
-                if (int.TryParse(parts[1], out int songIndex))
-                {
-                    // IMPORTANT!
-                    // will be select album to see it's contents
-                    //client.SelectAlbum();
-                    //HandleAlbumsOptionsMenu(client);
-                    Console.Clear();
-                }
-                else
-                {
-                    Console.WriteLine("Invalid song number.");
-                    Console.Clear();
-                }
-            }
-            else
-            {
-                Console.WriteLine("Unknown command. Try typing 'page 2' or 'exit'.");
-                Console.Clear();
-            }
-        }
-    }
-
-    private static void HandleAlbumOptionsMenu(Client client)
-    {
-        while (true)
-        {
-            Console.WriteLine("\n[1] Play Album");
-            Console.WriteLine("[2] Add Album to playlist (not working)");
-            Console.WriteLine("[0] Back");
-
-            Console.Write("-> ");
-            string input = Console.ReadLine() ?? "0";
-
-            switch (input)
-            {
-                case "1":
-
-                    client.Play();
-                    HandleNowPlayingMenu(client);
-                    //Console.ReadLine();
-                    break;
-
-                case "2":
-                    Console.WriteLine("Feature coming soon...");
-                    //Console.ReadLine();
-                    break;
-
-                case "0":
-                    return;
-
-                default:
-                    Console.WriteLine("Invalid option");
-                    break;
-            }
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // SONG OPTIONS (after selecting a song from any list)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private static void HandleSongOptionsMenu()
-    {
-        while (true)
-        {
-            Console.Clear();
-            Console.WriteLine($"Selected: {client.CurrentlyPlaying?.Title}");
-            Console.WriteLine("\n[1] Play");
-            Console.WriteLine("[2] Add to playlist");
-            Console.WriteLine("[0] Back");
-            Console.Write("-> ");
-
-            string input = Console.ReadLine() ?? "0";
-
-            switch (input.Trim())
-            {
-                case "1":
-                    client.Play();
-                    HandleNowPlayingScreen();
-                    break;
-                case "2":
-                    // !add playlist menu
-                    HandleAddToPlaylistMenu();
-                    break;
-                case "0":
-                    return;
-                default:
-                    Console.WriteLine("Invalid option.");
-                    Console.ReadLine();
-                    break;
-            }
-        }
-    }
-
-    private static void HandleNowPlayingMenu(Client client)
-    {
-        // return if no song is currently playing and to use song variable for easier access to song details
-        if (client.CurrentlyPlaying is not Song song) return;
-
-        bool isPaused = false;
-
-        while (true)
-        {
-            Console.Clear();
-
-            string statusTag = isPaused ? " [PAUSED]" : " [PLAYING]";
-
-            Console.WriteLine("Now Playing\n");
-            Console.WriteLine($"Playing: {song.Title} by {string.Join(", ", song.Artists)}");
-            Console.WriteLine($"Artist: {string.Join(", ", song.Artists)}");
-            Console.WriteLine($"Genre : {song.SongGenre}");
-            Console.WriteLine($"\nStatus: {statusTag}");
-            Console.WriteLine(client.GetCurrentSongTime());
-
-            Console.WriteLine("\n[P] Pause");
-            Console.WriteLine("[R] Resume");
-            Console.WriteLine("[N] Next");
-            Console.WriteLine("[0] Back");
-
-            Console.Write("-> ");
-
-            // check for user input without blocking the loop
-            // this allows the UI (time) to keep updating smoothly
-            // wait up to ~5 seconds (100 × 50ms) before refreshing the screen
-            int loopCounter = 0;
-            while (!Console.KeyAvailable && loopCounter < 100)
-            {
-                Thread.Sleep(50); // small delay to avoid high CPU usage
-                loopCounter++;
-            }
-
-            // if no key was pressed during the wait period and restart the loop to redraw the UI (time update)
-            if (!Console.KeyAvailable)
-            {
-                continue;
-            }
-
-            // use ReadKey instead of ReadLine so input does not block updates and the progress display keeps moving in real time
-            ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
-            string input = keyInfo.KeyChar.ToString().ToLower();
-
-            switch (input.ToLower())
-            {
-                case "p":
-                    client.Pause();
-                    isPaused = true;
-                    break;
-
-                case "r":
-                    client.Resume();
-                    isPaused = false;
-                    break;
-
-                case "n":
-                    client.NextSong();
-                    isPaused = false;
-                    if (client.CurrentlyPlaying is Song nextSong)
-                    {
-                        song = nextSong;
-                    }
-                    break;
-
-                case "0":
-                    return;
-
-                default:
-                    Console.WriteLine("Invalid option");
-                    Thread.Sleep(1000);
-                    break;
-            }
-
-
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // USER SELECT (runs once at startup)
-    // ─────────────────────────────────────────────────────────────────────────
     private static void HandleUserSelectScreen()
     {
         while (true)
         {
             Console.Clear();
-            Console.WriteLine("╭──────────────────────────────────────────────╮");
+            Console.WriteLine("|──────────────────────────────────────────────|");
             Console.WriteLine("│            Welcome to Synth Player           │");
             Console.WriteLine("│──────────────────────────────────────────────│");
             Console.WriteLine("│  Please select your account:                 │");
-            Console.WriteLine("╰──────────────────────────────────────────────╯");
+            Console.WriteLine("|──────────────────────────────────────────────|");
+
             client.ShowAllUsers();
+
             Console.Write("\nEnter user number: ");
             string input = Console.ReadLine() ?? "";
 
@@ -337,16 +78,265 @@ internal class Program
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // ----------------
+    // WELCOME SCREEN 
+    // ----------------
+
+    private static void ShowWelcomeScreen()
+    {
+        Console.Clear();
+        string user = client.ActiveUser.Name;
+        Console.WriteLine("|──────────────────────────────────────────────────────────────|");
+        Console.WriteLine("│                  Synth CLI Player - Console                  │");
+        Console.WriteLine("├──────────────────────────────────────────────────────────────┤");
+        Console.WriteLine($"│  Logged in: {user}                                            │");
+        Console.WriteLine("│                                                              │");
+        Console.WriteLine("│  Main menu (Choose a number)                                 │");
+        Console.WriteLine("│──────────────────────────────────────────────────────────────│");
+        Console.WriteLine("│  [1] Songs                                                   │");
+        Console.WriteLine("│  [2] Albums                                                  │");
+        Console.WriteLine("│  [3] Artists (coming soon)                                   │");
+        Console.WriteLine("│  [4] My Playlists                                            │");
+        Console.WriteLine("│  [5] Friends                                                 │");
+        Console.WriteLine("│  [0] Exit                                                    │");
+        Console.WriteLine("|──────────────────────────────────────────────────────────────|");
+        Console.Write("-> ");
+    }
+
+    // --------------
+    // SONGS MENU
+    // --------------
+
+    private static void HandleSongsMenu()
+    {
+        Console.Clear();
+        int currentPage = 1;
+
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine("-- All Songs --");
+            client.ShowAllSongs(currentPage);
+
+            Console.WriteLine("\n[page N] switch page");
+            Console.WriteLine("[select N] select a song");
+            Console.WriteLine("[back] go back");
+            Console.Write("\n-> ");
+
+            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
+            string command = parts[0];
+
+            if (command == "back")
+            {
+                break;
+            }
+            else if (command == "page" && parts.Length > 1 && int.TryParse(parts[1], out int page))
+            {
+                currentPage = page;
+            }
+            else if (command == "select" && parts.Length > 1 && int.TryParse(parts[1], out int songIndex))
+            {
+                client.SelectSong(songIndex);
+                if (client.CurrentlyPlaying != null)
+                    HandleSongOptionsMenu();
+            }
+            else
+            {
+                Console.WriteLine("Unknown command. Press Enter to try again.");
+                Console.ReadLine();
+            }
+        }
+    }
+
+    // ----------------------------------------------------
+    // SONG OPTIONS (after selecting a song from any list)
+    // ---------------------------------------------------
+
+    private static void HandleSongOptionsMenu()
+    {
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine($"Selected: {client.CurrentlyPlaying?.Title}");
+            Console.WriteLine("\n[1] Play");
+            Console.WriteLine("[2] Add to playlist");
+            Console.WriteLine("[0] Back");
+            Console.Write("-> ");
+
+            string input = Console.ReadLine() ?? "0";
+
+            switch (input.Trim())
+            {
+                case "1":
+                    client.Play();
+                    HandleNowPlayingScreen();
+                    break;
+                case "2":
+                    HandleAddToPlaylistMenu();
+                    break;
+                case "0":
+                    return;
+                default:
+                    Console.WriteLine("Invalid option.");
+                    Console.ReadLine();
+                    break;
+            }
+        }
+    }
+
+    // ----------------------------
+    // NOW PLAYING SCREEN
+    // ----------------------------
+
+    private static void HandleNowPlayingScreen()
+    {
+        while (true)
+        {
+            Console.Clear();
+
+            var song = client.GetCurrentSong();
+            if (song == null) return;
+
+            string status = client.IsPaused ? "[PAUSED]" : "[PLAYING]";
+
+            Console.WriteLine("── Now Playing ──────────────────────────────");
+            Console.WriteLine($"  Title  : {song.Title}");
+            Console.WriteLine($"  Artist : {string.Join(", ", song.Artists)}");
+            Console.WriteLine($"  Genre  : {song.SongGenre}");
+            Console.WriteLine($"  Status : {status}");
+            Console.WriteLine($"  Time   : {client.GetCurrentSongTime()}");
+            Console.WriteLine("─────────────────────────────────────────────");
+            Console.WriteLine("\n[P] Pause    [R] Resume    [N] Next    [0] Back");
+            Console.Write("-> ");
+
+            // wait 5 seconds before refreshing the time display
+            int waited = 0;
+            while (!Console.KeyAvailable && waited < 100)
+            {
+                Thread.Sleep(50);
+                waited++;
+            }
+
+            if (!Console.KeyAvailable) continue; // redraw (time update)
+
+            char key = char.ToLower(Console.ReadKey(intercept: true).KeyChar);
+
+            switch (key)
+            {
+                case 'p':
+                    client.Pause();
+                    break;
+                case 'r':
+                    client.Resume();
+                    break;
+                case 'n':
+                    client.NextSong();
+                    break;
+                case '0':
+                    return;
+                default:
+                    break;
+            }
+        }
+    }
+
+    // ----------------------------
+    // ALBUMS MENU
+    // ----------------------------
+
+    private static void HandleAlbumsMenu()
+    {
+        int currentPage = 1;
+
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine("-- All Albums --");
+            client.ShowAllAlbums(currentPage);
+
+            Console.WriteLine("\n[page N] switch page");
+            Console.WriteLine("[select N] open an album");
+            Console.WriteLine("[back] go back");
+            Console.Write("\n-> ");
+
+            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
+            string command = parts[0];
+
+            if (command == "back")
+            {
+                break;
+            }
+            else if (command == "page" && parts.Length > 1 && int.TryParse(parts[1], out int page))
+            {
+                currentPage = page;
+            }
+            else if (command == "select" && parts.Length > 1 && int.TryParse(parts[1], out int albumIndex))
+            {
+                var album = client.SelectAlbum(albumIndex);
+                if (album != null)
+                    HandleAlbumDetailMenu(album);
+            }
+            else
+            {
+                Console.WriteLine("Unknown command. Press Enter to try again.");
+                Console.ReadLine();
+            }
+        }
+    }
+
+    // show the songs inside one album
+    private static void HandleAlbumDetailMenu(Album album)
+    {
+        int currentPage = 1;
+
+        while (true)
+        {
+            Console.Clear();
+            client.ShowSongsInAlbum(album, currentPage);
+
+            Console.WriteLine("\n[select N] pick a song");
+            Console.WriteLine("[back] go back");
+            Console.Write("\n-> ");
+
+            string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
+            string command = parts[0];
+
+            if (command == "back") break;
+            else if (command == "select" && parts.Length > 1 && int.TryParse(parts[1], out int songIndex))
+            {
+                client.SelectSongFromAlbum(album, songIndex);
+                if (client.CurrentlyPlaying != null)
+                    HandleSongOptionsMenu();
+            }
+            else
+            {
+                Console.WriteLine("Unknown command.");
+                Console.ReadLine();
+            }
+        }
+    }
+
+    // ----------------------------
+    // ARTISTS MENU 
+    // ----------------------------
+
+    private static void HandleArtistsMenu()
+    {
+        Console.Clear();
+        Console.WriteLine("Artists feature coming soon.");
+        Console.ReadLine();
+    }
+
+    // ----------------------------
     // PLAYLIST MENU
-    // ─────────────────────────────────────────────────────────────────────────
+    // ----------------------------
 
     private static void HandlePlaylistMenu()
     {
         while (true)
         {
             Console.Clear();
-            Console.WriteLine("── My Playlists ──");
+            Console.WriteLine("-- My Playlists --");
             client.ShowUserPlaylists();
 
             Console.WriteLine("\n[create] create new playlist");
@@ -354,6 +344,7 @@ internal class Program
             Console.WriteLine("[delete N] delete a playlist");
             Console.WriteLine("[back] go back");
             Console.Write("\n-> ");
+
             string[] parts = (Console.ReadLine() ?? "").Trim().ToLower().Split(' ');
             string command = parts[0];
 
@@ -369,20 +360,66 @@ internal class Program
                 Console.ReadLine();
             }
             else if (command == "select" && parts.Length > 1 && int.TryParse(parts[1], out int index))
+            {
                 var playlist = client.SelectUserPlaylist(index);
-            if (playlist != null)
-                HandlePlaylistDetailMenu(playlist);
-        }
+                if (playlist != null)
+                    HandlePlaylistDetailMenu(playlist);
+            }
             else if (command == "delete" && parts.Length > 1 && int.TryParse(parts[1], out int delIndex))
+            {
+                client.RemovePlaylist(delIndex);
+                Console.ReadLine();
+            }
+            else
+            {
+                Console.WriteLine("Unknown command. Press Enter.");
+                Console.ReadLine();
+            }
+        }
+    }
+
+    // ----------------------------
+    // ADD TO PLAYLIST MENU
+    // ----------------------------
+
+    private static void HandleAddToPlaylistMenu()
+    {
+        Console.Clear();
+        Console.WriteLine("-- Add Song to Playlist --");
+
+        // show the user their available playlists
+        client.ShowUserPlaylists();
+
+        Console.Write("\nEnter playlist number to add this song to (or '0' to go back): ");
+        string input = Console.ReadLine() ?? "";
+
+        if (input.Trim() == "0") return;
+
+        if (int.TryParse(input.Trim(), out int playlistIndex))
         {
-            client.RemovePlaylist(delIndex);
-            Console.ReadLine();
+            // fetch the selected playlist using the client
+            var playlist = client.SelectUserPlaylist(playlistIndex);
+
+            if (playlist != null && client.CurrentlyPlaying is Song currentSong)
+            {
+                // add the song currently selected/playing to the chosen playlist,
+                // it takes a Song object
+                playlist.Add(currentSong);
+
+                Console.WriteLine($"\nSuccessfully added \"{currentSong.Title}\" to \"{playlist.Title}\"!");
+            }
+            else
+            {
+                Console.WriteLine("\nCould not complete the action. Invalid playlist or no song selected.");
+            }
         }
         else
         {
-            Console.WriteLine("Unknown command. Press Enter.");
-            Console.ReadLine();
+            Console.WriteLine("\nInvalid input.");
         }
+
+        Console.WriteLine("Press Enter to continue...");
+        Console.ReadLine();
     }
 
     // Inside a single playlist
@@ -393,6 +430,7 @@ internal class Program
             Console.Clear();
             Console.WriteLine($"── Playlist: {playlist.Title} ──");
             client.ShowSongsInPlaylist(playlist);
+
             Console.WriteLine("\n[add] add a song from All Songs");
             Console.WriteLine("[remove N] remove song at position N");
             Console.WriteLine("[play N] play song at position N");
@@ -449,41 +487,9 @@ internal class Program
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ADD TO PLAYLIST MENU
-    // ─────────────────────────────────────────────────────────────────────────
-    private static void HandleAddToPlaylistMenu()
-    {
-        Console.Clear();
-        Console.WriteLine("-- Add Current Song to Playlist --");
-
-        // Display the user's current playlists
-        client.ShowUserPlaylists();
-
-        Console.Write("\nEnter playlist number to add this song to (or 0 to cancel): ");
-        if (int.TryParse(Console.ReadLine(), out int index) && index > 0)
-        {
-            var playlist = client.SelectUserPlaylist(index);
-            if (playlist != null && client.CurrentlyPlaying is Song currentSong)
-            {
-                // Assuming your client has a way to add a Song object directly, 
-                // or you can pass the index of CurrentlyPlaying.
-                // Replace this line with the correct method your 'Client' class provides:
-                client.AddToPlaylist(index, playlist);
-                Console.WriteLine($"Added to {playlist.Title}!");
-            }
-            else
-            {
-                Console.WriteLine("Invalid playlist selection.");
-            }
-        }
-        Console.WriteLine("\nPress Enter to return...");
-        Console.ReadLine();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
+    // ----------------------------
     // FRIENDS MENU
-    // ─────────────────────────────────────────────────────────────────────────
+    // ----------------------------
 
     private static void HandleFriendsMenu()
     {
@@ -492,6 +498,7 @@ internal class Program
             Console.Clear();
             Console.WriteLine("-- Friends --");
             client.ShowFriends();
+
             Console.WriteLine("\n[add] add a friend from user list");
             Console.WriteLine("[remove N] remove friend at position N");
             Console.WriteLine("[view N] view playlists of friend N");
@@ -536,13 +543,13 @@ internal class Program
         }
     }
 
-    // Browse a friend's playlists and their songs
+    // browse a friend's playlists and their songs
     private static void HandleFriendPlaylistsMenu(User friend)
     {
         while (true)
         {
             Console.Clear();
-            Console.WriteLine($"-- {friend.Name}'s Playlists --");
+            Console.WriteLine($"-- {friend.Name} Playlists --");
 
             var playlists = friend.ShowPlaylists();
             if (playlists.Count == 0)
@@ -580,32 +587,5 @@ internal class Program
                 Console.ReadLine();
             }
         }
-    }
-
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // WELCOME SCREEN
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private static void ShowWelcomeScreen()
-    {
-        Console.Clear();
-        // add user variable and then add it to the main screen insted of just the text "user"
-        string user = client.ActiveUser?.Name ?? "Guest";
-        Console.WriteLine("|──────────────────────────────────────────────────────────────|");
-        Console.WriteLine("│                  Synth CLI Player - Console                  │");
-        Console.WriteLine("├──────────────────────────────────────────────────────────────┤");
-        Console.WriteLine("│  Logged in: user                                             |");
-        Console.WriteLine("│                                                              │");
-        Console.WriteLine("│  Main menu (Choose a number)                                 │");
-        Console.WriteLine("│──────────────────────────────────────────────────────────────│");
-        Console.WriteLine("│  [1] Songs                                                   │");
-        Console.WriteLine("│  [2] Albums                                                  │");
-        Console.WriteLine("│  [3] Artists (coming soon)                                   │");
-        Console.WriteLine("│  [4] My Playlists (coming soon)                              │");
-        Console.WriteLine("│  [5] Friends (coming soon)                                   │");
-        Console.WriteLine("│  [0] Exit                                                    │");
-        Console.WriteLine("|──────────────────────────────────────────────────────────────|");
-        Console.Write("-> ");
     }
 }

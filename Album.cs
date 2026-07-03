@@ -1,26 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Synth
 {
-    internal class Album
+    // Album extends SongCollection
+    // adds an Artists list on top of the base Title and Playables
+    internal class Album : SongCollection
     {
-        private List<Artist> Artists;
-        public string Title { get; private set; }
-        public List<Song> Songs;
+        public List<Artist> Artists { get; private set; }
 
-        
-        public Album(List<Artist> artist, string title, List<Song> songs) {
-
-            this.Artists = artist;
-            this.Title = title;
-            this.Songs = songs;
+        // Songs is a convenience property, it reads from the base Playables list and casts each item to Song,
+        // this makes it easy to loop over songs
+        public List<Song> Songs
+        {
+            get
+            {
+                var songs = new List<Song>();
+                foreach (var item in Playables)
+                {
+                    if (item is Song song)
+                        songs.Add(song);
+                }
+                return songs;
+            }
         }
 
-        public List<Artist> ShowArtists()
+        public Album(List<Artist> artists, string title, List<Song> songs) : base(title)
         {
-            return Artists;
+            Artists = artists;
+
+            // add each song into the base Playables list
+            foreach (var song in songs)
+            {
+                Playables.Add(song);
+            }
         }
 
         public override string ToString()
